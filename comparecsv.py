@@ -149,3 +149,61 @@ write_html_report(output_rows, output_file)
 
 print(f"HTML report generated: {output_file}")
 
+
+#######################
+import csv
+
+def read_csv(file_path):
+    """Reads the CSV file and returns a list of rows."""
+    with open(file_path, mode='r', newline='', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        return list(reader)
+
+def process_files(nonprod_file, prod_file):
+    """Processes the nonprod and prod CSV files and generates the output."""
+    nonprod_data = read_csv(nonprod_file)
+    prod_data = read_csv(prod_file)
+    
+    result = []
+
+    # Iterate through each row in prod.csv
+    for prod_row in prod_data:
+        prod_appname = prod_row[1]  # Extract APPNAME from prod file (second column)
+        prod_filename = prod_row[4]  # Extract the filename from prod file (fifth column)
+        prod_location = prod_row[3]  # Extract location from prod file (fourth column)
+        
+        # Find matching row in nonprod.csv
+        for nonprod_row in nonprod_data:
+            nonprod_appname = nonprod_row[1]  # Extract APPNAME from nonprod file (second column)
+            nonprod_filename = nonprod_row[4]  # Extract the filename from nonprod file (fifth column)
+            nonprod_location = nonprod_row[3]  # Extract location from nonprod file (fourth column)
+
+            # If APPNAME matches between prod and nonprod, create the output row
+            if prod_appname == nonprod_appname:
+                # Format the combined output
+                nonprod_combined = f"SIT-BLUE-{nonprod_filename}"
+                prod_combined = f"PROD-{prod_location}-{prod_filename}"
+                
+                result.append([nonprod_row[0], nonprod_appname, nonprod_combined, prod_combined])
+
+    return result
+
+def write_output(output_file, data):
+    """Writes the processed data to a CSV file."""
+    with open(output_file, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerows(data)
+
+# Example usage
+nonprod_file = 'nonprod.csv'
+prod_file = 'prod.csv'
+output_file = 'output.csv'
+
+result = process_files(nonprod_file, prod_file)
+write_output(output_file, result)
+
+# Optionally, print the result to console
+for row in result:
+    print(row)
+
+
