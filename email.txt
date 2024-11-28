@@ -1,0 +1,29 @@
+Subject: Request to Implement /version and /manifest.jsp Endpoints for JVM and Jar Tracking
+
+Hi [Team/All],
+
+I hope this email finds you well.
+
+I’m reaching out to propose the development of two API endpoints that will enhance our visibility into JVM details and deployed JARs, helping us improve transparency and deployment tracking. Below are the requirements:
+
+1. Create /version or /info API Endpoint
+This endpoint should provide key JVM details, including:
+
+Name: JVM name
+Version: JVM version
+Branch: Code branch deployed
+Commit ID: Commit identifier
+JVM Start Time: When the JVM instance started
+User Started (Optional): User who initiated the JVM
+2. Create /manifest.jsp API Endpoint
+To track deployed JARs and ensure correct deployment, we need a /manifest.jsp endpoint that lists all classpath or library JARs, including:
+
+Manifest Version: Each JAR’s version from the manifest
+Jar Created Time: Timestamp of when the JAR was built
+Commit ID: Associated commit identifier or package information
+This will help us quickly identify if the correct JARs have been deployed, minimizing deployment errors and enhancing traceability.
+
+Please let me know if any additional details are required or if we need to discuss this further.
+
+Best regards,
+[Your Name]
