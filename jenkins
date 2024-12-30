@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+    environment {
+        ENV_FILE = ".env" // Path to your environment file
+    }
+    stages {
+        stage('Prepare') {
+            steps {
+                script {
+                    // Check if the file exists and load it
+                    if (fileExists(ENV_FILE)) {
+                        def props = readProperties file: ENV_FILE
+                        props.each { key, value ->
+                            env[key] = value
+                        }
+                    } else {
+                        error "Environment file ${ENV_FILE} not found!"
+                    }
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                echo "Loaded Environment Variables:"
+                sh 'env'
+                // Run your build script
+                sh './build_script.sh'
+            }
+        }
+    }
+}
