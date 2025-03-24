@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Dropdown with API Call</title>
+    <title>Environment & Flag Selector</title>
     <!-- Bootstrap CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -14,22 +14,23 @@
     <div class="container py-5">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h3 class="card-title mb-4">Dynamic Dropdown with API Call</h3>
+                <h3 class="card-title mb-4">Select Environment and Flag</h3>
 
                 <form id="myForm">
                     <div class="mb-3">
-                        <label for="category" class="form-label">Category</label>
-                        <select id="category" class="form-select" required>
-                            <option value="">--Select Category--</option>
-                            <option value="fruits">Fruits</option>
-                            <option value="vegetables">Vegetables</option>
+                        <label for="environment" class="form-label">Environment</label>
+                        <select id="environment" class="form-select" required>
+                            <option value="">--Select Environment--</option>
+                            <option value="dev">Dev</option>
+                            <option value="staging">Staging</option>
+                            <option value="production">Production</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label for="item" class="form-label">Items</label>
-                        <select id="item" class="form-select" required>
-                            <option value="">--Select Item--</option>
+                        <label for="flag" class="form-label">Flag</label>
+                        <select id="flag" class="form-select" required>
+                            <option value="">--Select Flag--</option>
                         </select>
                     </div>
 
@@ -45,52 +46,47 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const items = {
-            fruits: ["Apple", "Banana", "Mango", "Orange"],
-            vegetables: ["Carrot", "Broccoli", "Spinach", "Pepper"]
-        };
+        const flags = ["Blue", "Green"];
 
-        const categorySelect = document.getElementById('category');
-        const itemSelect = document.getElementById('item');
+        const environmentSelect = document.getElementById('environment');
+        const flagSelect = document.getElementById('flag');
         const form = document.getElementById('myForm');
         const responseDiv = document.getElementById('response');
 
-        // Populate second dropdown dynamically
-        categorySelect.addEventListener('change', function () {
-            const selectedCategory = this.value;
-            itemSelect.innerHTML = '<option value="">--Select Item--</option>';
+        // Populate Flag dropdown whenever environment changes
+        environmentSelect.addEventListener('change', function () {
+            flagSelect.innerHTML = '<option value="">--Select Flag--</option>';
 
-            if (items[selectedCategory]) {
-                items[selectedCategory].forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.toLowerCase();
-                    option.text = item;
-                    itemSelect.appendChild(option);
-                });
-            }
+            // Always show Blue/Green regardless of environment
+            flags.forEach(flag => {
+                const option = document.createElement('option');
+                option.value = flag.toLowerCase();
+                option.text = flag;
+                flagSelect.appendChild(option);
+            });
         });
 
         // Submit form and call a mock API
         form.addEventListener('submit', function (e) {
             e.preventDefault();
-            const category = categorySelect.value;
-            const item = itemSelect.value;
+            const environment = environmentSelect.value;
+            const flag = flagSelect.value;
 
-            // Example API call (replace URL with real API endpoint)
+            // Example API call (replace with real endpoint)
             fetch('https://jsonplaceholder.typicode.com/posts', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ category, item })
+                body: JSON.stringify({ environment, flag })
             })
                 .then(response => response.json())
                 .then(data => {
                     responseDiv.innerHTML = `
                         <div class="alert alert-success">
                             API Called Successfully!<br>
-                            <strong>Category:</strong> ${category} <br>
-                            <strong>Item:</strong> ${item}
+                            <strong>Environment:</strong> ${environment} <br>
+                            <strong>Flag:</strong> ${flag}
                         </div>
                     `;
                 })
