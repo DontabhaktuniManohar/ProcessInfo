@@ -15,6 +15,12 @@ def get_first_blue_object(api_url):
             print("No 'list' found in response or 'list' is not a list.")
             return None
 
+        for item in items:
+            if item.get("bgflag") == "Blue" and item.get("deployby") == "raj":
+                return item
+
+        return None
+
     except requests.RequestException as e:
         print(f"API request failed: {e}")
         return None
