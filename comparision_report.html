@@ -21,7 +21,7 @@
                         <label for="environment" class="form-label">Environment</label>
                         <select id="environment" class="form-select" required>
                             <option value="">--Select Environment--</option>
-                            <option value="dev">Dev</option>
+                            <option value="SIT5">SIT5</option>
                             <option value="staging">Staging</option>
                             <option value="production">Production</option>
                         </select>
@@ -66,34 +66,45 @@
             });
         });
 
-        // Submit form and call a mock API
+        // Submit form and call the API
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             const environment = environmentSelect.value;
             const flag = flagSelect.value;
 
-            // Example API call (replace with real endpoint)
-            fetch('https://jsonplaceholder.typicode.com/posts', {
-                method: 'POST',
+            // Make the API call
+            fetch("http://localhost:5000/api/deployment?bgflag=Blue&environment=SIT5",{
+                method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ environment, flag })
+                }
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP Error! Status: ${response.status}`);
+                        }
+                    return response.json();
+                })
+                
                 .then(data => {
-                    responseDiv.innerHTML = `
-                        <div class="alert alert-success">
-                            API Called Successfully!<br>
-                            <strong>Environment:</strong> ${environment} <br>
-                            <strong>Flag:</strong> ${flag}
-                        </div>
-                    `;
+                    // Check if API returned valid data
+                    if (data && data.artifact) {
+                        responseDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <h4>API Response:</h4>
+                                <strong>Artifact:</strong> ${data.artifact} <br>
+                                <strong>Commit:</strong> ${data.commit} <br>
+                                <strong>Flag:</strong> ${data.bgflag} <br>
+                                <strong>Deploy By:</strong> ${data.deployby} <br>
+                                <strong>Deployment Status:</strong> ${data.deploymentstatus}
+                            </div>
+                        `;
+                    } else {
+                        responseDiv.innerHTML = `<div class="alert alert-warning">No matching data found.</div>`;
+                    }
                 })
                 .catch(error => {
-                    responseDiv.innerHTML = `
-                        <div class="alert alert-danger">Error calling API: ${error}</div>
-                    `;
+                    responseDiv.innerHTML = `<div class="alert alert-danger">Error calling API: ${error}</div>`;
                 });
         });
     </script>
