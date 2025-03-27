@@ -94,4 +94,5 @@ form.addEventListener("submit", async function (e) {
 
     tableHTML += `</tbody></table>`;
     responseDiv.innerHTML = tableHTML;
+    document.getElementById("loadingSpinner").style.display = "none"; // Hide Spinner
 });
