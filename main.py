@@ -246,3 +246,14 @@ with open('commit_comparison_detailed.csv', mode='w', newline='') as file:
 
 print("✅ Detailed commit comparison written to 'commit_comparison_detailed.csv'")
 
+#########
+# Parse command-line arguments like key=value
+args = dict(arg.split('=') for arg in sys.argv[1:] if '=' in arg)
+
+# Extract values with default fallback
+bgflag = args.get('bgflag', 'NA')
+group = args.get('group', 'default')
+
+# You can optionally set them to environment variables if needed
+os.environ['BGFLAG'] = bgflag
+os.environ['GROUP'] = group
