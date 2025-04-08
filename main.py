@@ -125,3 +125,50 @@ for env in environments:
 df = pd.DataFrame(table_data, columns=["Environment", "Commit (Prefix)", "Status"])
 print(df.to_string(index=False))  # Print table without index
 
+--------------------
+import requests
+import csv
+
+API_URL_TEMPLATE = "http://localhost:5000/api/deployment?environment={env}"
+environments = ["SIT1", "PROD", "CANARY", "PRODE"]
+sit_env = "SIT1"  # Reference environment for comparison
+
+def extract_commit_key(commit):
+    if not commit or not isinstance(commit, str):
+        return "N/A"
+    parts = commit.split('-')
+    return '-'.join(parts[:2]) if len(parts) >= 2 else commit
+
+# Fetch data
+env_data = {}
+for env in environments:
+    url = API_URL_TEMPLATE.format(env=env)
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("status") == "success":
+                data = result.get("data", [])
+                env_data[env] = data[0] if data else {"commit": "N/A"}
+            else:
+                env_data[env] = {"commit": "N/A"}
+        else:
+            env_data[env] = {"commit": "N/A"}
+    except Exception as e:
+        env_data[env] = {"commit": "N/A"}
+
+# Get reference commit key from SIT env
+ref_commit = extract_commit_key(env_data[sit_env].get("commit"))
+
+# Write to CSV
+csv_filename = "commit_comparison.csv"
+with open(csv_filename, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Environment", "Commit", "Status"])
+
+    for env in environments:
+        commit = extract_commit_key(env_data[env].get("commit"))
+        status = "Same" if commit == ref_commit else "Different"
+        writer.writerow([env, commit, status])
+
+print(f"CSV report saved to: {csv_filename}")
