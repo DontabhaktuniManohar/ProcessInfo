@@ -182,3 +182,67 @@ with open('commit_comparison.csv', mode='w', newline='') as file:
 
 print("✅ Commit comparison saved to 'commit_comparison.csv'")
 
+##################
+import requests
+import csv
+import os
+
+# Base environment to compare against
+base_env = 'SIT2'
+compare_envs = ['PROD', 'CANARY', 'PRODE']
+environments = [base_env] + compare_envs
+
+# API template
+api_url_template = "http://localhost:5000/api/deployment?environment={env}"
+
+# Function to extract comparable part of the commit
+def extract_commit_key(commit):
+    if not commit or not isinstance(commit, str):
+        return "N/A"
+    commit = os.path.splitext(commit)[0]  # Remove extension
+    parts = commit.split('-')
+    return '-'.join(parts[:-1]) if len(parts) > 1 else commit
+
+# Gather data
+all_data = {}
+
+for env in environments:
+    try:
+        response = requests.get(api_url_template.format(env=env))
+        result = response.json()
+
+        if result.get("status") == "success":
+            for item in result.get("data", []):
+                app = item.get("artifact", "unknown")
+                commit = extract_commit_key(item.get("commit"))
+
+                if app not in all_data:
+                    all_data[app] = {}
+                all_data[app][env] = commit
+    except Exception as e:
+        print(f"Error fetching for {env}: {e}")
+
+# Write to CSV
+with open('commit_comparison_detailed.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    header = ['appname', *environments, *[f"{env} STATUS" for env in compare_envs]]
+    writer.writerow(header)
+
+    for app, env_data in all_data.items():
+        row = [app]
+        base_commit = env_data.get(base_env, 'N/A')
+
+        # Add commit IDs
+        for env in environments:
+            row.append(env_data.get(env, 'N/A'))
+
+        # Add comparison statuses
+        for env in compare_envs:
+            cmp_commit = env_data.get(env, 'N/A')
+            status = 'same' if base_commit == cmp_commit and cmp_commit != 'N/A' else 'differ'
+            row.append(status)
+
+        writer.writerow(row)
+
+print("✅ Detailed commit comparison written to 'commit_comparison_detailed.csv'")
+
