@@ -128,47 +128,57 @@ print(df.to_string(index=False))  # Print table without index
 --------------------
 import requests
 import csv
+import os
 
-API_URL_TEMPLATE = "http://localhost:5000/api/deployment?environment={env}"
-environments = ["SIT1", "PROD", "CANARY", "PRODE"]
-sit_env = "SIT1"  # Reference environment for comparison
+# Define your environments and the API URL template
+environments = ['SIT1', 'PROD', 'CANARY']
+api_url_template = "http://localhost:5000/api/deployment?environment={env}"
 
+# Function to normalize the commit ID
 def extract_commit_key(commit):
     if not commit or not isinstance(commit, str):
         return "N/A"
+    commit = os.path.splitext(commit)[0]  # Remove .war/.jar/.zip
     parts = commit.split('-')
-    return '-'.join(parts[:2]) if len(parts) >= 2 else commit
+    return '-'.join(parts[:-1]) if len(parts) > 1 else commit
 
-# Fetch data
-env_data = {}
+# Collect all data: {appname: {env: commit}}
+all_data = {}
+
 for env in environments:
-    url = API_URL_TEMPLATE.format(env=env)
     try:
+        url = api_url_template.format(env=env)
         response = requests.get(url)
-        if response.status_code == 200:
-            result = response.json()
-            if result.get("status") == "success":
-                data = result.get("data", [])
-                env_data[env] = data[0] if data else {"commit": "N/A"}
-            else:
-                env_data[env] = {"commit": "N/A"}
-        else:
-            env_data[env] = {"commit": "N/A"}
-    except Exception as e:
-        env_data[env] = {"commit": "N/A"}
+        result = response.json()
+        
+        if result.get("status") == "success":
+            for item in result.get("data", []):
+                app = item.get("artifact", "unknown")
+                commit = extract_commit_key(item.get("commit"))
 
-# Get reference commit key from SIT env
-ref_commit = extract_commit_key(env_data[sit_env].get("commit"))
+                if app not in all_data:
+                    all_data[app] = {}
+
+                all_data[app][env] = commit
+        else:
+            print(f"No success for env {env}")
+    except Exception as e:
+        print(f"Failed for {env}: {e}")
 
 # Write to CSV
-csv_filename = "commit_comparison.csv"
-with open(csv_filename, mode='w', newline='') as file:
+with open('commit_comparison.csv', mode='w', newline='') as file:
     writer = csv.writer(file)
-    writer.writerow(["Environment", "Commit", "Status"])
+    writer.writerow(['appname', *environments, 'commit', 'status'])
 
-    for env in environments:
-        commit = extract_commit_key(env_data[env].get("commit"))
-        status = "Same" if commit == ref_commit else "Different"
-        writer.writerow([env, commit, status])
+    for app, env_data in all_data.items():
+        commits = [env_data.get(env, 'N/A') for env in environments]
 
-print(f"CSV report saved to: {csv_filename}")
+        # Determine if all commit keys are the same
+        unique = set([c for c in commits if c != 'N/A'])
+        status = "same" if len(unique) == 1 else "differ"
+        final_commit = commits[0] if commits[0] != 'N/A' else next((c for c in commits if c != 'N/A'), 'N/A')
+
+        writer.writerow([app, *commits, final_commit, status])
+
+print("✅ Commit comparison saved to 'commit_comparison.csv'")
+
