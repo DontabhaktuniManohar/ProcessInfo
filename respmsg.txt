@@ -1,0 +1,9 @@
+awk '
+  /<RespMsg>/ { in_resp=1 }
+  in_resp && /<Code>/ {
+    match($0, /<Code>([^<]*)<\/[Cc]ode>/, m)
+    if (m[1] != "") print m[1]
+    in_resp=0
+  }
+' largefile.xml
+#sed -n '/<RespMsg>/,/<\/RespMsg>/p' largefile.xml | sed -n 's:.*<[Cc]ode>\(.*\)</[Cc]ode>.*:\1:p'
