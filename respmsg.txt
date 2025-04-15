@@ -7,3 +7,57 @@ awk '
   }
 ' largefile.xml
 #sed -n '/<RespMsg>/,/<\/RespMsg>/p' largefile.xml | sed -n 's:.*<[Cc]ode>\(.*\)</[Cc]ode>.*:\1:p'
+
+
+#!/bin/bash
+
+# === CONFIGURATION ===
+URL="https://example.com/api"
+REQUEST_DIR="./requests"
+RESULT_FILE="code_result.log"
+BAD_DIR="bad_responses"
+
+mkdir -p "$BAD_DIR"
+> "$RESULT_FILE"  # Clear previous result log
+
+# === PROCESS EACH XML FILE ===
+for XML_FILE in "$REQUEST_DIR"/*.xml; do
+  FILE_NAME=$(basename "$XML_FILE")
+  RESPONSE_FILE="response_$FILE_NAME"
+
+  # POST the XML and capture status and output
+  HTTP_RESPONSE=$(curl -s -w "%{http_code}" -o "$RESPONSE_FILE" \
+    -X POST -H "Content-Type: application/xml" \
+    --data @"$XML_FILE" "$URL")
+
+  HTTP_CODE="${HTTP_RESPONSE: -3}"
+  RESPONSE_BODY=$(<"$RESPONSE_FILE")
+
+  # Check for HTTP success
+  if [[ "$HTTP_CODE" != "200" ]]; then
+    echo "$FILE_NAME  HTTP_$HTTP_CODE" >> "$RESULT_FILE"
+    cp "$RESPONSE_FILE" "$BAD_DIR/bad_$FILE_NAME"
+    continue
+  fi
+
+  # Check response content sanity
+  if [[ -z "$RESPONSE_BODY" ]] || ! echo "$RESPONSE_BODY" | grep -q "<?xml"; then
+    echo "$FILE_NAME  INVALID_XML" >> "$RESULT_FILE"
+    cp "$RESPONSE_FILE" "$BAD_DIR/bad_$FILE_NAME"
+    continue
+  fi
+
+  # Extract <Code> from <RespMsg>
+  CODE=$(echo "$RESPONSE_BODY" | sed -n '/<RespMsg>/,/<\/RespMsg>/{
+    /<[Cc]ode>/ s:.*<[Cc]ode>\(.*\)</[Cc]ode>.*:\1:p
+  }')
+
+  # Write result to file
+  if [[ -n "$CODE" ]]; then
+    echo "$FILE_NAME  $CODE" >> "$RESULT_FILE"
+  else
+    echo "$FILE_NAME  MISSING_CODE" >> "$RESULT_FILE"
+    cp "$RESPONSE_FILE" "$BAD_DIR/bad_$FILE_NAME"
+  fi
+done
+
