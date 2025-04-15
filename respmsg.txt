@@ -61,3 +61,73 @@ for XML_FILE in "$REQUEST_DIR"/*.xml; do
   fi
 done
 
+
+############################
+#!/bin/bash
+
+# === CONFIG ===
+API1_URL="https://api1.example.com/endpoint"
+API2_URL="https://api2.example.com/endpoint"
+REQUEST_DIR="./requests"
+RESULT_FILE="code_result.log"
+BAD_DIR="bad_responses"
+mkdir -p "$BAD_DIR"
+> "$RESULT_FILE"
+
+# === Function to POST and extract Code ===
+post_and_get_code() {
+  local url=$1
+  local xml_file=$2
+  local tmp_response=$3
+
+  # Send POST and capture status
+  http_status=$(curl -s -w "%{http_code}" -o "$tmp_response" \
+    -X POST -H "Content-Type: application/xml" \
+    --data @"$xml_file" "$url")
+
+  # Check HTTP code
+  if [[ "$http_status" != "200" ]]; then
+    echo "HTTP_$http_status"
+    return
+  fi
+
+  response_body=$(<"$tmp_response")
+
+  # Sanity check
+  if [[ -z "$response_body" ]] || ! echo "$response_body" | grep -q "<?xml"; then
+    echo "INVALID_XML"
+    return
+  fi
+
+  # Extract <Code>
+  code=$(echo "$response_body" | sed -n '/<RespMsg>/,/<\/RespMsg>/{
+    /<[Cc]ode>/ s:.*<[Cc]ode>\(.*\)</[Cc]ode>.*:\1:p
+  }')
+
+  if [[ -n "$code" ]]; then
+    echo "$code"
+  else
+    echo "MISSING_CODE"
+  fi
+}
+
+# === MAIN LOOP ===
+for xml in "$REQUEST_DIR"/*.xml; do
+  filename=$(basename "$xml")
+
+  # Temp response files
+  resp1="resp1_$filename"
+  resp2="resp2_$filename"
+
+  echo "Processing: $filename"
+
+  code1=$(post_and_get_code "$API1_URL" "$xml" "$resp1")
+  code2=$(post_and_get_code "$API2_URL" "$xml" "$resp2")
+
+  echo "$filename  API1:$code1  API2:$code2" >> "$RESULT_FILE"
+
+  # Optional: save bad responses
+  [[ "$code1" != "200" ]] && cp "$resp1" "$BAD_DIR/bad_api1_$filename"
+  [[ "$code2" != "200" ]] && cp "$resp2" "$BAD_DIR/bad_api2_$filename"
+done
+
