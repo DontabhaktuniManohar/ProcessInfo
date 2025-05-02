@@ -61,4 +61,31 @@ class AuroraCdkStack(Stack):
                         }
                     ]
                 }
-        )    
+        ) 
+        ssm.CfnDocument(
+            self, "SSMDocumentFailoverGlobalCluster",
+            name="FailoverGlobalCluster-MultiRegion",
+            document_type="Automation",
+            content={
+                "schemaVersion": "0.3",
+                "description": "FailoverDBCluster in MultiAZ ",
+                "parameters": {
+                    "GlobalClusterIdentifier": {"type": "String", "default": resource_config['global_cluster_id']},
+                    "TargetDbClusterIdentifierArn": {"type": "String", "default": resource_config['TargetDbClusterIdentifierArn']},
+                    "AutomationAssumeRole": {"type": "String", "default": automation_role.role_arn}
+                },
+                "assumeRole": "{{ AutomationAssumeRole }}",
+                "mainSteps": [
+                        {
+                          "name": "FailoverGlobalCluster",
+                          "action": "aws:executeAwsApi",
+                          "inputs": {
+                            "Service": "rds",
+                            "Api": "FailoverGlobalCluster",
+                            "GlobalClusterIdentifier": "{{ GlobalClusterIdentifier }}",
+                            "TargetDbClusterIdentifier": "{{ TargetDbClusterIdentifierArn }}"
+                          }
+                        }
+                    ]
+                }
+        ) 
