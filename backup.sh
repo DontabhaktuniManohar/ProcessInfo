@@ -23,3 +23,11 @@ echo "Replacing $OLD_FILE with $NEW_FILE..."
 cp "$DIRECTORY/$NEW_FILE" "$DIRECTORY/$OLD_FILE"
 
 echo "Backup and replacement completed."
+
+aws ec2 describe-instances \
+  --instance-ids $(aws autoscaling describe-auto-scaling-groups \
+    --auto-scaling-group-names <your-asg-name> \
+    --query "AutoScalingGroups[0].Instances[*].InstanceId" \
+    --output text) \
+  --query "Reservations[*].Instances[*].PrivateIpAddress" \
+  --output text
