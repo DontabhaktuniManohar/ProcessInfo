@@ -31,3 +31,13 @@ aws ec2 describe-instances \
     --output text) \
   --query "Reservations[*].Instances[*].PrivateIpAddress" \
   --output text
+
+
+- hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Show the dynamically selected value
+      debug:
+        msg: "The value is {{ vars[env + '_' + region + '_' + service] }}"
