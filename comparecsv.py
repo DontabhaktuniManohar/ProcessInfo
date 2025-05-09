@@ -1,4 +1,4 @@
-import csv
+iimport csv
 
 # Read the nonprod file and create a dictionary with the appname as key
 def read_nonprod_file(file_path):
@@ -207,3 +207,25 @@ for row in result:
     print(row)
 
 
+
+
+
+- name: Start async script
+  shell: ./command.sh ALL
+  args:
+    chdir: /path/to/script
+  async: 600
+  poll: 0
+  register: async_result
+
+- name: Wait for script to finish and get output
+  async_status:
+    jid: "{{ async_result.ansible_job_id }}"
+  register: job_status
+  until: job_status.finished
+  retries: 10
+  delay: 5
+
+- name: Print stdout lines
+  debug:
+    var: job_status.stdout_lines
