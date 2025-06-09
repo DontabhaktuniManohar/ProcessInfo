@@ -97,3 +97,48 @@ try:
     results.append((xml_file.name, code.text if code is not None else "NO_CODE"))
 except ET.ParseError:
     results.append((xml_file.name, "INVALID_XML"))
+
+
+
+import requests
+import xml.etree.ElementTree as ET
+import re
+
+# Namespace used in the XML
+ns = {'ns': 'http://www.vzw.com/namespaces/scmplus'}
+
+def extract_valid_xml(xml_text):
+    """
+    Extracts the XML section from inside any wrapping junk like HTML.
+    Looks for known root tag: <RespViewPurchases>...</RespViewPurchases>
+    """
+    match = re.search(r"(<RespViewPurchases.*?</RespViewPurchases>)", xml_text, re.DOTALL)
+    return match.group(1) if match else None
+
+def parse_respmsg_code(xml_string):
+    try:
+        root = ET.fromstring(xml_string)
+        code = root.find(".//ns:RespMsg/ns:Code", namespaces=ns)
+        return code.text if code is not None else "NO_CODE"
+    except ET.ParseError as e:
+        return f"INVALID_XML: {e}"
+
+# Example URL and XML payload
+url = "http://your-api-endpoint-here"
+xml_payload = """<your-request-body-here>...</your-request-body-here>"""
+
+try:
+    response = requests.post(url, headers={"Content-Type": "application/xml"}, data=xml_payload, timeout=10)
+    response_text = response.text.strip()
+
+    # Try to extract only the valid XML part
+    xml_clean = extract_valid_xml(response_text)
+
+    if xml_clean:
+        code = parse_respmsg_code(xml_clean)
+        print("RespMsg Code:", code)
+    else:
+        print("Could not extract valid XML from response.")
+
+except Exception as e:
+    print("Request failed:", str(e))
