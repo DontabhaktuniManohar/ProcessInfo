@@ -74,3 +74,26 @@ for api_url in url_list:
 df = pd.DataFrame(results, columns=["FILE_NAME", "CODE"])
 df.to_csv(result_file, index=False)
 df.to_html(report_file, index=False)
+
+
+
+import urllib.parse
+
+if "application/x-www-form-urlencoded" in content_type.lower():
+    # Parse and decode
+    parsed = urllib.parse.parse_qs(response.text)
+    if "response" in parsed:
+        xml_str = parsed["response"][0]
+    else:
+        results.append((xml_file.name, "NO_RESPONSE_FIELD"))
+        continue
+else:
+    xml_str = response.text
+
+# Now parse XML
+try:
+    root = ET.fromstring(xml_str)
+    code = root.find(".//ns:RespMsg/ns:Code", namespaces=ns)
+    results.append((xml_file.name, code.text if code is not None else "NO_CODE"))
+except ET.ParseError:
+    results.append((xml_file.name, "INVALID_XML"))
