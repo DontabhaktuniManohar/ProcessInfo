@@ -142,3 +142,38 @@ try:
 
 except Exception as e:
     print("Request failed:", str(e))
+
+
+
+
+import csv
+
+data = [
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-03', 'RuleCount': 4},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-04', 'RuleCount': 15},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-07', 'RuleCount': 2},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-08', 'RuleCount': 6},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-09', 'RuleCount': 1},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-10', 'RuleCount': 10},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-11', 'RuleCount': 2},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-12', 'RuleCount': 6},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-13', 'RuleCount': 5},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-15', 'RuleCount': 5},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-16', 'RuleCount': 8},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-17', 'RuleCount': 1},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-18', 'RuleCount': 1},
+    {'RuleSetName': 'VZDMInt', 'RuleSetVersion': '07-17-10', 'RuleCount': 5},
+    {'RuleSetName': 'VZDMInt', 'RuleSetVersion': '07-17-12', 'RuleCount': 2},
+    {'RuleSetName': 'VZDMInt', 'RuleSetVersion': '07-17-14', 'RuleCount': 1},
+    {'RuleSetName': 'VZDMRMAP', 'RuleSetVersion': '07-17-01', 'RuleCount': 2},
+    {'RuleSetName': 'VZDM-Artifacts', 'RuleSetVersion': '07-17-02', 'RuleCount': 2},
+    {'RuleSetName': 'VZDM-Artifacts', 'RuleSetVersion': '07-17-04', 'RuleCount': 1},
+]
+
+# Write to CSV
+with open('ruleset_output.csv', mode='w', newline='') as file:
+    writer = csv.DictWriter(file, fieldnames=['RuleSetName', 'RuleSetVersion', 'RuleCount'])
+    writer.writeheader()
+    writer.writerows(data)
+
+print("CSV file 'ruleset_output.csv' written successfully.")
