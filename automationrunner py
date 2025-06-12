@@ -177,3 +177,51 @@ with open('ruleset_output.csv', mode='w', newline='') as file:
     writer.writerows(data)
 
 print("CSV file 'ruleset_output.csv' written successfully.")
+
+
+
+from collections import defaultdict
+import csv
+
+# Sample input data
+data = [
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-03', 'RuleCount': 4},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-04', 'RuleCount': 15},
+    {'RuleSetName': 'VZDMInt', 'RuleSetVersion': '07-17-10', 'RuleCount': 5},
+    {'RuleSetName': 'VZDM-Artifacts', 'RuleSetVersion': '07-17-02', 'RuleCount': 2},
+    {'RuleSetName': 'VZDM-Artifacts', 'RuleSetVersion': '07-17-04', 'RuleCount': 1},
+    {'RuleSetName': 'VZDMRMAP', 'RuleSetVersion': '07-17-01', 'RuleCount': 2},
+    # ... Add the rest of your data here
+]
+
+# Build a dictionary with RuleSetVersion as rows and RuleSetNames as columns
+pivot_data = defaultdict(dict)
+rule_set_names = set()
+
+for entry in data:
+    version = entry['RuleSetVersion']
+    name = entry['RuleSetName']
+    count = entry['RuleCount']
+    pivot_data[version][name] = count
+    rule_set_names.add(name)
+
+# Sort the headers and rows
+sorted_versions = sorted(pivot_data.keys())
+sorted_names = sorted(rule_set_names)
+
+# Write to CSV
+with open("pivot_output.csv", "w", newline="") as csvfile:
+    writer = csv.writer(csvfile)
+    
+    # Header row
+    header = ["VERSION"] + sorted_names
+    writer.writerow(header)
+    
+    # Each row: version + rule counts (default 0 if missing)
+    for version in sorted_versions:
+        row = [version]
+        for name in sorted_names:
+            row.append(pivot_data[version].get(name, ""))
+        writer.writerow(row)
+
+print("Pivot-style CSV written as 'pivot_output.csv'")
