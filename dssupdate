@@ -1,0 +1,52 @@
+DSS Update Methods – Manual vs API Execution
+This document compares the manual and API-based execution of DSS (Dynamic System Settings) updates in Pega, along with a flowchart to visualize the process and recommendations for secure access.
+### Flowchart: DSS Update Process
+ 
+Manual vs API-Based Execution – Comparison
+Aspect	Manual Execution	API Execution (updateConfig)
+Time Efficiency	Slow – login and update each env manually	Fast – supports bulk updates
+Error-Prone	High – risk of human error	Low – automation minimizes mistakes
+Auditability	Poor – hard to trace	Good – logs via service account
+Security	Needs individual access per user	Centralized with admin/service account
+Scalability	Poor	High – scriptable
+Rollback	Manual	Possible with versioned payload
+Consistency	Risk of mismatch	Consistent across environments
+Access Strategy Recommendation
+It is recommended to create a dedicated Service Account for invoking the DSS update API instead of granting administrator privileges to individual users.
+Steps:
+•	- Create operator like `svc_ConfigUpdater`
+•	- Assign necessary access for DSS update scope only
+•	- Restrict UI login
+•	- Use API with secure authentication
+•	- Log and monitor API usage
+ 
+Service Account Traceability & Audit Strategy
+To address concerns around accountability when using a service account for DSS updates via API, the following strategies can be adopted to ensure traceability and audit readiness:
+1. Token-Based Execution with Metadata
+Capture the user or system that triggers the API call (e.g., Jenkins user, scheduled job) and include this information in the payload or headers of the request. This ensures indirect attribution.
+2. Custom Audit Logging
+Implement structured logs for every update. The log entry should contain:
+- DSS Name
+- Updated Value
+- Timestamp
+- Triggered By (User or CI Job ID)
+- Payload ID (if applicable)
+3. Role-Based Workflow with Approvals
+Automate DSS updates behind a controlled approval gate. For instance:
+  Request → Approval → API Execution.
+The approving user's name and timestamp are logged for audit.
+4. Integration with Centralized Logging
+Send update logs to external monitoring systems (e.g., Splunk, ELK, CloudWatch) for retention, searchability, and alerts in case of unauthorized changes.
+Sample Log Format
+Timestamp: 2025-06-19T14:52:00Z
+Environment: Pega-Dev
+DSS Name: pxProcessExt/MaxRequestorThreshold
+Old Value: 200
+New Value: 300
+Triggered By: jenkins_user123
+Execution Account: svc_ConfigUpdater
+Payload ID: DSSChange-JOB-20250619-001
+Jenkins Job Logging Tip
+Use environment variables to dynamically log who triggered the job. For example, in a Jenkins pipeline:
+
+`echo "Triggered By: ${BUILD_USER_ID}" >> dss_update.log`
