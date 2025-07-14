@@ -160,3 +160,108 @@ def index():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
+
+
+
+##  If you want to trigger collection for a specific app and dc (e.g., manually or via API), you can extend your Flask app to support this.
+@app.route('/collect/<app>/<dc>', methods=['POST', 'GET'])
+def collect_one(app, dc):
+    input_file = f'abc-{app}-{dc}.txt'
+    output_file = f'abc-{app}-{dc}.csv'
+
+    try:
+        result = subprocess.run(
+            ['python3', 'main.py', '-f', input_file, '-dc', dc, '-r', output_file],
+            timeout=120, capture_output=True, text=True
+        )
+        COLLECT_ERR.labels(app=app, dc=dc).set(0 if result.returncode == 0 else 1)
+    except subprocess.TimeoutExpired:
+        COLLECT_ERR.labels(app=app, dc=dc).set(1)
+        return f"⏱️ Timed out for {app}-{dc}", 504
+
+    if not os.path.exists(output_file):
+        return f"❌ Output file {output_file} not found.", 404
+
+    try:
+        with open(output_file, newline='') as f:
+            reader = csv.DictReader(f)
+            # Remove existing metrics for this app-dc
+            for label in list(STATUS._metrics):
+                if label[0] == app and label[1] == dc:
+                    STATUS.remove(*label)
+            for row in reader:
+                STATUS.labels(
+                    app=app,
+                    dc=dc,
+                    appname=row['appname'].strip(),
+                    url=row['service url'].strip(),
+                    version=row['version'].strip()
+                ).set(1 if row['status'].strip().upper() == 'UP' else 0)
+    except Exception as e:
+        return f"❌ Failed to process CSV for {app}-{dc}: {e}", 500
+
+    return f"✅ Metrics collected for {app}-{dc}", 200
+
+#i have given only appname and it needs to run on all dcs which should take form config.json
+
+@app.route('/collect/<app>', methods=['POST', 'GET'])
+def collect_app(app):
+    # Load from config.json
+    try:
+        with open(CONFIG_FILE) as f:
+            config = json.load(f)
+    except Exception as e:
+        return f"❌ Failed to load config: {e}", 500
+
+    dcs = config.get(app)
+    if not dcs:
+        return f"⚠️ App '{app}' not found in config.json", 404
+
+    success = []
+    failed = []
+
+    for dc in dcs:
+        input_file = f'abc-{app}-{dc}.txt'
+        output_file = f'abc-{app}-{dc}.csv'
+
+        try:
+            result = subprocess.run(
+                ['python3', 'main.py', '-f', input_file, '-dc', dc, '-r', output_file],
+                timeout=120, capture_output=True, text=True
+            )
+            COLLECT_ERR.labels(app=app, dc=dc).set(0 if result.returncode == 0 else 1)
+        except subprocess.TimeoutExpired:
+            COLLECT_ERR.labels(app=app, dc=dc).set(1)
+            failed.append(dc)
+            continue
+
+        if not os.path.exists(output_file):
+            failed.append(dc)
+            continue
+
+        try:
+            # Optional cleanup of existing metrics for app+dc
+            for label in list(STATUS._metrics):
+                if label[0] == app and label[1] == dc:
+                    STATUS.remove(*label)
+
+            with open(output_file, newline='') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    STATUS.labels(
+                        app=app,
+                        dc=dc,
+                        appname=row['appname'].strip(),
+                        url=row['service url'].strip(),
+                        version=row['version'].strip()
+                    ).set(1 if row['status'].strip().upper() == 'UP' else 0)
+            success.append(dc)
+        except Exception as e:
+            failed.append(dc)
+
+    return {
+        "app": app,
+        "success": success,
+        "failed": failed,
+        "status": "✅ Complete" if not failed else "⚠️ Partial"
+    }, 200 if not failed else 207
