@@ -84,7 +84,158 @@ TEMPLATE = """
 if __name__ == '__main__':
     app.run(debug=True, port=5050)
 
+### added dc suite###
+from flask import Flask, request, render_template_string, redirect, url_for
+import json
+import os
 
+app = Flask(__name__)
+CONFIG_FILE = 'config.json'
+
+# -----------------------
+# Data‑layer helpers
+# -----------------------
+
+def load_config():
+    """Return a dict shaped as {suite: {app: [dc, ...], ...}, ...}."""
+    if not os.path.exists(CONFIG_FILE):
+        return {}
+    with open(CONFIG_FILE, 'r') as f:
+        try:
+            return json.load(f)
+        except ValueError:
+            return {}
+
+def save_config(cfg):
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(cfg, f, indent=2)
+
+# -----------------------
+# Routes
+# -----------------------
+
+@app.route('/')
+def index():
+    cfg = load_config()
+    return render_template_string(TEMPLATE, cfg=cfg)
+
+# Suite operations -----------------------------------------------------------
+
+@app.route('/add_suite', methods=['POST'])
+def add_suite():
+    suite = request.form.get('suite', '').strip()
+    cfg = load_config()
+    if suite and suite not in cfg:
+        cfg[suite] = {}
+        save_config(cfg)
+    return redirect(url_for('index'))
+
+@app.route('/delete_suite/<suite>')
+def delete_suite(suite):
+    cfg = load_config()
+    if suite in cfg:
+        del cfg[suite]
+        save_config(cfg)
+    return redirect(url_for('index'))
+
+# App operations -------------------------------------------------------------
+
+@app.route('/add_app/<suite>', methods=['POST'])
+def add_app(suite):
+    appname = request.form.get('appname', '').strip()
+    cfg = load_config()
+    if suite in cfg and appname and appname not in cfg[suite]:
+        cfg[suite][appname] = []
+        save_config(cfg)
+    return redirect(url_for('index'))
+
+@app.route('/delete_app/<suite>/<appname>')
+def delete_app(suite, appname):
+    cfg = load_config()
+    if suite in cfg and appname in cfg[suite]:
+        del cfg[suite][appname]
+        save_config(cfg)
+    return redirect(url_for('index'))
+
+# DC operations --------------------------------------------------------------
+
+@app.route('/add_dc/<suite>/<appname>', methods=['POST'])
+def add_dc(suite, appname):
+    dc = request.form.get('dc', '').strip()
+    cfg = load_config()
+    if suite in cfg and appname in cfg[suite] and dc and dc not in cfg[suite][appname]:
+        cfg[suite][appname].append(dc)
+        save_config(cfg)
+    return redirect(url_for('index'))
+
+@app.route('/remove_dc/<suite>/<appname>/<dc>')
+def remove_dc(suite, appname, dc):
+    cfg = load_config()
+    if suite in cfg and appname in cfg[suite] and dc in cfg[suite][appname]:
+        cfg[suite][appname].remove(dc)
+        save_config(cfg)
+    return redirect(url_for('index'))
+
+# -----------------------
+# Page template (HTMX‑style auto refresh)
+# -----------------------
+TEMPLATE = """
+<!doctype html>
+<title>Suite / App / DC Config Editor</title>
+<h2 class="title">🛠 Suite → App → DC Configuration</h2>
+<style>
+  body{font-family: Arial, sans-serif; margin:2rem; background:#f8f9fa}
+  input,button{padding:0.3rem 0.6rem; margin:0.2rem}
+  ul{list-style-type:none; padding-left:1rem}
+  li{margin:0.2rem 0}
+  .suite{border:1px solid #ccd; border-radius:8px; padding:1rem; background:#fff; margin-bottom:1.2rem}
+  .app{margin-left:1rem; border-left:3px solid #77a; padding-left:0.7rem}
+</style>
+
+<!-- Add Suite -->
+<form method="post" action="/add_suite">
+  <input name="suite" placeholder="New Suite Name">
+  <button type="submit">➕ Add Suite</button>
+</form>
+<hr>
+
+{% for suite, apps in cfg.items() %}
+  <div class="suite">
+    <h3>{{ suite }}
+      <a href="/delete_suite/{{ suite }}" style="color:red; float:right;">🗑 Delete Suite</a>
+    </h3>
+    <!-- Add App to Suite -->
+    <form method="post" action="/add_app/{{ suite }}">
+      <input name="appname" placeholder="Add App to {{ suite }}">
+      <button type="submit">➕ Add App</button>
+    </form>
+
+    {% for app, dcs in apps.items() %}
+      <div class="app">
+        <strong>{{ app }}</strong>
+        <a href="/delete_app/{{ suite }}/{{ app }}" style="color:red;">🗑 Remove App</a>
+        <ul>
+          {% for dc in dcs %}
+            <li>{{ dc }}
+              <a href="/remove_dc/{{ suite }}/{{ app }}/{{ dc }}" style="color:gray;">❌</a>
+            </li>
+          {% endfor %}
+        </ul>
+        <form method="post" action="/add_dc/{{ suite }}/{{ app }}">
+          <input name="dc" placeholder="Add DC to {{ app }}">
+          <button type="submit">➕ Add DC</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+{% endfor %}
+"""
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5050)
+
+
+########################
 
 from flask import Flask, Response
 from prometheus_client import Gauge, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST
