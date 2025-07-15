@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <title>Sent DSS Logs</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 2rem; }
+    h2 { margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #555; padding: 0.5rem; text-align: left; }
+    th { background-color: #333; }
+    tr:nth-child(even) { background-color: #222; }
+    .back { margin-top: 1rem; display: inline-block; color: #0af; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+  <h2>🗂 Sent DSS Payload Logs</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Environment</th>
+        <th>DSS Entries</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in logs %}
+        <tr>
+          <td>{{ entry.timestamp }}</td>
+          <td>{{ entry.environment }}</td>
+          <td><pre>{{ entry.entries | tojson(indent=2) }}</pre></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <a class="back" href="/">← Back to Form</a>
+</body>
+</html>
