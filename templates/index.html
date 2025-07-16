@@ -33,6 +33,7 @@
             name="environment"
             placeholder="🔍 Type to search environment..."
             oninput="updateJson()"
+            onclick="resetForm()"
             style="width:100%; padding:8px; margin-bottom:6px;">
       <datalist id="envOptions">
         {% for env in environments %}
@@ -140,43 +141,59 @@
   }
 
   function reconfirmAndSubmit() {
-  const wrapper = buildWrapper();
-  if (wrapper.DSSList.length === 0) {
-    alert("Please add at least one DSS entry.");
-    return;
+    const wrapper = buildWrapper();
+    if (wrapper.DSSList.length === 0) {
+      alert("Please add at least one DSS entry.");
+      return;
+    }
+
+    const env = document.getElementById("environment").value.trim();
+    const url = envUrls[env];
+
+    if (!url) {
+      alert("Environment URL not found.");
+      return;
+    }
+
+    const ok = confirm(
+      `🔧 Environment: ${env}\n` +
+      `🌐 URL: ${url}\n\n` +
+      `Payload:\n${JSON.stringify(wrapper, null, 2)}\n\nProceed?`
+    );
+    if (!ok) return;
+
+    const box = document.getElementById("apiResponseBox");
+    box.textContent = "⏳ Sending request...";
+
+    // 🔁 SEND and only reset if SUCCESS
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(wrapper)
+    })
+      .then(async r => {
+        const status = r.status;
+        let text = await r.text();
+        try {
+          text = JSON.stringify(JSON.parse(text), null, 2);
+        } catch {}
+        box.textContent = text;
+      })
+      .catch(err => {
+        box.textContent = "❌ Error: " + err.message;
+      });
   }
 
-  const env = document.getElementById("environment").value.trim();
-  const url = envUrls[env];
-
-  if (!url) {
-    alert("Environment URL not found.");
-    return;
+  function resetForm() {
+    document.getElementById("dssForm").reset();      // resets inputs
+    document.getElementById("entries").innerHTML = ""; // remove DSS entries
+    document.getElementById("jsonPreview").textContent = "[]";
+    document.getElementById("selectedUrl").textContent = "[ No URL selected ]";
+    document.getElementById("apiResponseBox").textContent = "[ No response yet ]";
+    entryId = 0;  // reset counter
+    addEntry();   // add one default DSS input row
   }
 
-  const ok = confirm(
-    `🔧 Environment: ${env}\n` +
-    `🌐 URL: ${url}\n\n` +
-    `Payload:\n${JSON.stringify(wrapper, null, 2)}\n\nProceed?`
-  );
-  if (!ok) return;
-
-  // Add hidden payload input
-  const form = document.getElementById("dssForm");
-
-  // Remove existing hidden input if any
-  const existing = document.querySelector('input[name="jsonPayload"]');
-  if (existing) existing.remove();
-
-  const hidden = document.createElement("input");
-  hidden.type = "hidden";
-  hidden.name = "jsonPayload";
-  hidden.value = JSON.stringify(wrapper);
-  form.appendChild(hidden);
-
-  console.log("✅ Submitting form to Flask...");
-  form.submit();  // 🔁 Let Flask handle POST
-}
 
   function copyJson() {
     navigator.clipboard.writeText(document.getElementById('jsonPreview').textContent)
@@ -204,7 +221,7 @@
     .then(r => r.json())
     .then(d => {
       document.getElementById('apiResponseBox').textContent =
-        JSON.stringify(d, null, 2);
+        d;
     })
     .catch(err => {
       document.getElementById('apiResponseBox').textContent = "Error: " + err;
