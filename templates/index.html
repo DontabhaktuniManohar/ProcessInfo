@@ -13,7 +13,12 @@
     .btn { background: #28a745; color: #fff; border: none; cursor: pointer; }
     .btn-remove { background: #e74c3c; margin-top: 10px; }
     .btn-action { background: #0069d9; margin-top: 1rem; }
+    .button-group {display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-small {padding: 6px 12px; font-size: 0.85rem; background: #0069d9; color: white; border: none; border-radius: 4px; cursor: pointer; flex: none; width: auto; }
     pre { background: #000; padding: 1rem; overflow-x: auto; border-radius: 8px; font-size: 0.9rem; }
+    #apiResponseBox {
+      background: #111; color: #0f0; padding: 1rem; border: 1px solid #444; border-radius: 8px; white-space: pre-wrap; font-size: 0.85rem; max-height: 300px; overflow-y: auto; margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -23,11 +28,17 @@
     <h2>Update DSS</h2>
     <form method="post" id="dssForm">
       <label>Environment:</label>
-      <select name="environment" id="environment" onchange="updateJson()" required>
+      <input list="envOptions"
+            id="environment"
+            name="environment"
+            placeholder="🔍 Type to search environment..."
+            oninput="updateJson()"
+            style="width:100%; padding:8px; margin-bottom:6px;">
+      <datalist id="envOptions">
         {% for env in environments %}
-          <option value="{{ env }}">{{ env }}</option>
+          <option value="{{ env }}">
         {% endfor %}
-      </select>
+      </datalist>
 
       <div id="entries"></div>
       <button type="button" onclick="addEntry()" class="btn">+ Add New</button>
@@ -44,118 +55,162 @@
     <h3>Payload Preview</h3>
     <pre id="jsonPreview">[]</pre>
 
-    <button onclick="copyJson()" class="btn-action">📋 Copy to Clipboard</button>
-    <button onclick="downloadJson()" class="btn-action">💾 Download JSON</button>
-    <button onclick="sendToMock()" class="btn-action">🧪 Send to Mock API</button>
+    <div class="button-group">
+      <button onclick="copyJson()" class="btn-small">📋 Copy</button>
+      <button onclick="downloadJson()" class="btn-small">💾 Save</button>
+      <button onclick="sendToMock()" class="btn-small">🧪 Send</button>
+    </div>
+    <h3>API Response</h3>
+    <pre id="apiResponseBox">[ No response yet ]</pre>
     <div id="mockResponse" style="margin-top:1rem; font-size:0.9rem;"></div>
   </div>
 </div>
 
 <script>
-let config = {{ environments | tojson }};
-let entryId = 0;
+  const envUrls = {{ config | tojson }};
+  let entryId = 0;
 
-// Add one default entry on load
-addEntry();
+  document.addEventListener("DOMContentLoaded", () => {
+    addEntry();  // default row
 
-function addEntry() {
-  const container = document.getElementById('entries');
-  const div = document.createElement('div');
-  div.className = 'dss-entry';
-  div.innerHTML = `
-    <input type="text" name="owning_ruleset_${entryId}" placeholder="OwningRuleset" oninput="updateJson()" required>
-    <input type="text" name="setting_purpose_${entryId}" placeholder="SettingPurpose" oninput="updateJson()" required>
-    <input type="text" name="new_value_${entryId}" placeholder="NewValue" oninput="updateJson()" required>
-    <button type="button" class="btn btn-remove" onclick="this.parentElement.remove(); updateJson();">Remove</button>
-  `;
-  container.appendChild(div);
-  entryId++;
-  updateJson();
-}
+    document.getElementById("envSearch").addEventListener("input", function () {
+      const searchTerm = this.value.toLowerCase();
+      const options = document.getElementById("environment").options;
+      let matchIndex = -1, visibleCount = 0;
 
-function getJsonPayload(includeUrl = false) {
-  const formData = new FormData(document.getElementById('dssForm'));
-  const selectedEnv = formData.get('environment');
-  const dssList = [];
+      for (let i = 0; i < options.length; i++) {
+        const visible = options[i].text.toLowerCase().includes(searchTerm);
+        options[i].style.display = visible ? "" : "none";
+        if (visible) {
+          matchIndex = i;
+          visibleCount++;
+        }
+      }
 
-  for (let [key, value] of formData.entries()) {
-    if (key.startsWith('owning_ruleset_')) {
-      const id = key.split('_').pop();
-      const setting = formData.get(`setting_purpose_${id}`);
-      const newVal  = formData.get(`new_value_${id}`);
-      if (setting && newVal) {
-        dssList.push({
-          "OwningRuleset": value,
-          "SettingPurpose": setting,
-          "NewValue": newVal
-        });
+      if (visibleCount === 1) {
+        document.getElementById("environment").selectedIndex = matchIndex;
+        updateJson();
+      }
+    });
+  });
+
+  function addEntry() {
+    const container = document.getElementById('entries');
+    const div = document.createElement('div');
+    div.className = 'dss-entry';
+    div.innerHTML = `
+      <input type="text" name="owning_ruleset_${entryId}" placeholder="OwningRuleSet" oninput="updateJson()" required>
+      <input type="text" name="setting_purpose_${entryId}" placeholder="SettingPurpose" oninput="updateJson()" required>
+      <input type="text" name="new_value_${entryId}" placeholder="NewValue" oninput="updateJson()" required>
+      <button type="button" class="btn btn-remove" onclick="this.parentElement.remove(); updateJson();">Remove</button>
+    `;
+    container.appendChild(div);
+    entryId++;
+    updateJson();
+  }
+
+  function buildWrapper() {
+    const formData = new FormData(document.getElementById('dssForm'));
+    const list = [];
+
+    for (let [key, value] of formData.entries()) {
+      if (key.startsWith('owning_ruleset_')) {
+        const id = key.split('_').pop();
+        const setting = formData.get(`setting_purpose_${id}`);
+        const newVal  = formData.get(`new_value_${id}`);
+        if (setting && newVal) {
+          list.push({
+            "OwningRuleSet": value,
+            "Setting":       setting,
+            "Value":         newVal
+          });
+        }
       }
     }
+    return { "DSSList": list };
   }
 
-  return includeUrl
-    ? { url: config[selectedEnv] || "", entries: dssList }
-    : dssList;
-}
+  function updateJson() {
+    document.getElementById('jsonPreview').textContent =
+      JSON.stringify(buildWrapper(), null, 2);
 
-function updateJson() {
-  const payload = getJsonPayload(false); // just entries
-  document.getElementById('jsonPreview').textContent = JSON.stringify(payload, null, 2);
-
-  // Update selected URL display
-  const selectedEnv = document.getElementById('environment').value;
-  const envUrl = config[selectedEnv] || "(not found)";
-  document.getElementById('selectedUrl').textContent = envUrl;
-}
-
-function reconfirmAndSubmit() {
-  const payloadWithUrl = getJsonPayload(true); // show in confirm
-  const pretty  = JSON.stringify(payloadWithUrl, null, 2);
-  const confirmMsg = `Please confirm the following payload (including URL):\n\n${pretty}\n\nProceed?`;
-  if (confirm(confirmMsg)) {
-    const hiddenInput = document.createElement('input');
-    hiddenInput.type = 'hidden';
-    hiddenInput.name = 'jsonPayload';
-    hiddenInput.value = JSON.stringify(getJsonPayload(false)); // only DSS entries
-    document.getElementById('dssForm').appendChild(hiddenInput);
-    document.getElementById('dssForm').submit();
+    const env = document.getElementById('environment').value;
+    document.getElementById('selectedUrl').textContent =
+      envUrls[env] || "(url not found)";
   }
-}
 
-function copyJson() {
-  navigator.clipboard.writeText(document.getElementById('jsonPreview').textContent)
-    .then(() => alert("Copied to clipboard!"));
-}
+  function reconfirmAndSubmit() {
+  const wrapper = buildWrapper();
+  if (wrapper.DSSList.length === 0) {
+    alert("Please add at least one DSS entry.");
+    return;
+  }
 
-function downloadJson() {
-  const blob = new Blob(
-    [document.getElementById('jsonPreview').textContent],
-    { type: 'application/json' }
+  const env = document.getElementById("environment").value.trim();
+  const url = envUrls[env];
+
+  if (!url) {
+    alert("Environment URL not found.");
+    return;
+  }
+
+  const ok = confirm(
+    `🔧 Environment: ${env}\n` +
+    `🌐 URL: ${url}\n\n` +
+    `Payload:\n${JSON.stringify(wrapper, null, 2)}\n\nProceed?`
   );
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'dss_payload.json';
-  link.click();
+  if (!ok) return;
+
+  // Add hidden payload input
+  const form = document.getElementById("dssForm");
+
+  // Remove existing hidden input if any
+  const existing = document.querySelector('input[name="jsonPayload"]');
+  if (existing) existing.remove();
+
+  const hidden = document.createElement("input");
+  hidden.type = "hidden";
+  hidden.name = "jsonPayload";
+  hidden.value = JSON.stringify(wrapper);
+  form.appendChild(hidden);
+
+  console.log("✅ Submitting form to Flask...");
+  form.submit();  // 🔁 Let Flask handle POST
 }
 
-function sendToMock() {
-  const cleanPayload = getJsonPayload(false);
-  fetch('https://httpbin.org/post', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(cleanPayload)
-  })
-  .then(r => r.json())
-  .then(d => {
-    document.getElementById('mockResponse').innerHTML =
-      "<strong>Mock API replied with:</strong><br><pre>" +
-      JSON.stringify(d.json, null, 2) + "</pre>";
-  })
-  .catch(err => {
-    document.getElementById('mockResponse').textContent = "Error: " + err;
-  });
-}
+  function copyJson() {
+    navigator.clipboard.writeText(document.getElementById('jsonPreview').textContent)
+      .then(() => alert("Copied to clipboard!"));
+  }
+
+  function downloadJson() {
+    const blob = new Blob(
+      [document.getElementById('jsonPreview').textContent],
+      { type: 'application/json' }
+    );
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'dss_payload.json';
+    link.click();
+  }
+
+  function sendToMock() {
+    const cleanPayload = buildWrapper();
+    fetch('https://httpbin.org/post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cleanPayload)
+    })
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('apiResponseBox').textContent =
+        JSON.stringify(d, null, 2);
+    })
+    .catch(err => {
+      document.getElementById('apiResponseBox').textContent = "Error: " + err;
+    });
+  }
 </script>
-</body>
 <a href="/logs" style="color: #0af; display: block; margin-top: 1rem;">🔎 View Sent DSS Logs</a>
+</body>
 </html>

@@ -14,11 +14,14 @@ def load_config():
         return {}
     with open(CONFIG_FILE, 'r') as f:
         return json.load(f)
-def log_payload(environment, payload):
+def log_payload(environment, payload, response_text, status_code):
+    print("💾 Logging payload to file...", flush=True)
     log_entry = {
         "timestamp": datetime.now().isoformat(),
         "environment": environment,
-        "entries": payload
+        "entries": payload,
+        "response_status": status_code,
+        "response_text": response_text
     }
     with open("sent_payloads_log.jsonl", "a") as f:
         f.write(json.dumps(log_entry) + "\n")
@@ -26,11 +29,12 @@ def log_payload(environment, payload):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     config = load_config()
-    environments = config
 
     if request.method == 'POST':
+        print("📝 Received POST request", flush=True)
         environment = request.form['environment']
         url = config.get(environment)
+
         if not url:
             flash("Invalid environment selected", "error")
             return redirect(url_for('index'))
@@ -40,20 +44,28 @@ def index():
             return redirect(url_for('index'))
 
         try:
-            dss_entries = json.loads(request.form['jsonPayload'])
-            print("Sending payload to Pega:",flush=True)
-            print(json.dumps(dss_entries, indent=2),flush=True)
-            log_payload(environment, dss_entries)
-            response = requests.post(url, json=dss_entries, auth=('pega_user', 'pega_pass'))
+            wrapper  = json.loads(request.form['jsonPayload'])
+
+            print("Sending payload to Pega:", flush=True)
+            print(json.dumps(wrapper, indent=2), flush=True)
+
+            response = requests.post(url, json=wrapper, auth=('pega_user', 'pega_pass'))
+            #log_payload(environment, wrapper, response.text, response.status_code)
+
             if response.status_code == 200:
-                flash("DSS values updated successfully", "success")
+                flash("✅ DSS values updated successfully", "success")
             else:
-                flash(f"Failed: {response.status_code} - {response.text}", "error")
+                flash(f"❌ Failed: {response.status_code} - {response.text}", "error")
+
+            # Log only after successful or failed post (not earlier!)
+            log_payload(environment, wrapper, response.text, response.status_code)
 
         except Exception as e:
-            flash(f"Exception: {str(e)}", "error")
+            flash(f"❌ Exception: {str(e)}", "error")
 
-    return render_template('index.html', environments=environments)
+        return redirect(url_for('index'))  # 🛑 POST-Redirect-GET
+
+    return render_template('index.html', environments=list(config.keys()), config=config)
 @app.route('/logs')
 def view_logs():
     logs = []

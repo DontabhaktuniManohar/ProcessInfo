@@ -5,22 +5,42 @@
   <style>
     body { font-family: sans-serif; background: #111; color: #eee; padding: 2rem; }
     h2 { margin-bottom: 1rem; }
+
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #555; padding: 0.5rem; text-align: left; }
-    th { background-color: #333; }
-    tr:nth-child(even) { background-color: #222; }
+    th, td { border: 1px solid #555; padding: 0.75rem; text-align: left; vertical-align: top; }
+    th { background-color: #222; }
+    tr:nth-child(even) { background-color: #1c1c1c; }
+
     .back { margin-top: 1rem; display: inline-block; color: #0af; }
-    pre { white-space: pre-wrap; word-wrap: break-word; }
+    pre { white-space: pre-wrap; word-wrap: break-word; font-size: 0.85rem; }
+
+    .dss-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.85rem;
+    }
+
+    .dss-table th, .dss-table td {
+      border: 1px solid #666;
+      padding: 4px 8px;
+      text-align: left;
+    }
+
+    .status-ok { color: #0f0; font-weight: bold; }
+    .status-fail { color: #f66; font-weight: bold; }
   </style>
 </head>
 <body>
   <h2>🗂 Sent DSS Payload Logs</h2>
+
   <table>
     <thead>
       <tr>
-        <th>Timestamp</th>
-        <th>Environment</th>
-        <th>DSS Entries</th>
+        <th>⏱ Timestamp</th>
+        <th>🌐 Environment</th>
+        <th>📦 DSS Entries</th>
+        <th>📊 Status</th>
+        <th>📄 Response</th>
       </tr>
     </thead>
     <tbody>
@@ -28,11 +48,27 @@
         <tr>
           <td>{{ entry.timestamp }}</td>
           <td>{{ entry.environment }}</td>
-          <td><pre>{{ entry.entries | tojson(indent=2) }}</pre></td>
+          <td>
+            <table class="dss-table">
+              <tr><th>OwningRuleSet</th><th>Setting</th><th>Value</th></tr>
+              {% for dss in entry.entries.DSSList %}
+                <tr>
+                  <td>{{ dss.OwningRuleSet }}</td>
+                  <td>{{ dss.Setting }}</td>
+                  <td>{{ dss.Value }}</td>
+                </tr>
+              {% endfor %}
+            </table>
+          </td>
+          <td class="{{ 'status-ok' if entry.response_status == 200 else 'status-fail' }}">
+            {{ entry.response_status }}
+          </td>
+          <td><pre>{{ entry.response_text }}</pre></td>
         </tr>
       {% endfor %}
     </tbody>
   </table>
+
   <a class="back" href="/">← Back to Form</a>
 </body>
 </html>
