@@ -1,9 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify
 import json
 import requests
 import os
 from datetime import datetime
-from flask import jsonify
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key'
@@ -14,14 +13,15 @@ def load_config():
         return {}
     with open(CONFIG_FILE, 'r') as f:
         return json.load(f)
+
 def log_payload(environment, payload, response_text, status_code):
-    print("💾 Logging payload to file...", flush=True)
+    print("📦 Log written for:", environment or "(none)")
     log_entry = {
         "timestamp": datetime.now().isoformat(),
-        "environment": environment,
-        "entries": payload,
+        "environment": environment or "UNKNOWN",
+        "entries": payload or {},
         "response_status": status_code,
-        "response_text": response_text
+        "response_text": response_text or "No response"
     }
     with open("sent_payloads_log.jsonl", "a") as f:
         f.write(json.dumps(log_entry) + "\n")
@@ -32,40 +32,53 @@ def index():
 
     if request.method == 'POST':
         print("📝 Received POST request", flush=True)
-        environment = request.form['environment']
-        url = config.get(environment)
 
-        if not url:
-            flash("Invalid environment selected", "error")
-            return redirect(url_for('index'))
+        data = request.form or request.get_json()
+        environment = data.get('environment')
+        payload_raw = data.get('jsonPayload')
 
-        if 'jsonPayload' not in request.form:
-            flash("Missing payload.", "error")
-            return redirect(url_for('index'))
+        wrapper = None
+        response_text = ''
+        status_code = None
 
         try:
-            wrapper  = json.loads(request.form['jsonPayload'])
+            if not environment or not payload_raw:
+                raise ValueError("Missing environment or payload")
 
-            print("Sending payload to Pega:", flush=True)
+            url = config.get(environment)
+            if not url:
+                raise ValueError("Invalid environment")
+
+            wrapper = json.loads(payload_raw)
+
+            print("Sending payload to Pega:")
             print(json.dumps(wrapper, indent=2), flush=True)
 
-            response = requests.post(url, json=wrapper, auth=('pega_user', 'pega_pass'))
-            #log_payload(environment, wrapper, response.text, response.status_code)
+            response = requests.post(url, json=wrapper, auth=('pega_user', 'pega_pass'), timeout=15)
+
+            response_text = response.text
+            status_code = response.status_code
 
             if response.status_code == 200:
-                flash("✅ DSS values updated successfully", "success")
+                success = True
+                message = "✅ DSS updated"
             else:
-                flash(f"❌ Failed: {response.status_code} - {response.text}", "error")
-
-            # Log only after successful or failed post (not earlier!)
-            log_payload(environment, wrapper, response.text, response.status_code)
+                success = False
+                message = f"❌ Failed {response.status_code}"
 
         except Exception as e:
-            flash(f"❌ Exception: {str(e)}", "error")
+            success = False
+            message = f"❌ Exception: {str(e)}"
+            response_text = str(e)
+            status_code = 500
 
-        return redirect(url_for('index'))  # 🛑 POST-Redirect-GET
+        finally:
+            log_payload(environment, wrapper, response_text, status_code)
+
+        return jsonify({"success": success, "message": message, "response": response_text}), status_code
 
     return render_template('index.html', environments=list(config.keys()), config=config)
+
 @app.route('/logs')
 def view_logs():
     logs = []
@@ -73,6 +86,7 @@ def view_logs():
         with open("sent_payloads_log.jsonl", "r") as f:
             for line in f:
                 logs.append(json.loads(line))
+        logs.reverse()
     except FileNotFoundError:
         pass
     return render_template('logs.html', logs=logs)

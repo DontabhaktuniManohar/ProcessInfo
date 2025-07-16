@@ -162,26 +162,23 @@
     );
     if (!ok) return;
 
-    const box = document.getElementById("apiResponseBox");
-    box.textContent = "⏳ Sending request...";
+    const formData = new FormData();
+    formData.append("environment", env);
+    formData.append("jsonPayload", JSON.stringify(wrapper));
 
-    // 🔁 SEND and only reset if SUCCESS
-    fetch(url, {
+    document.getElementById('apiResponseBox').textContent = "⏳ Sending...";
+
+    fetch("/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(wrapper)
+      body: formData
     })
-      .then(async r => {
-        const status = r.status;
-        let text = await r.text();
-        try {
-          text = JSON.stringify(JSON.parse(text), null, 2);
-        } catch {}
-        box.textContent = text;
-      })
-      .catch(err => {
-        box.textContent = "❌ Error: " + err.message;
-      });
+    .then(r => r.json())
+    .then(res => {
+      document.getElementById('apiResponseBox').textContent = res.response || res.message;
+    })
+    .catch(err => {
+      document.getElementById('apiResponseBox').textContent = "Network Error: " + err;
+    });
   }
 
   function resetForm() {
@@ -193,7 +190,6 @@
     entryId = 0;  // reset counter
     addEntry();   // add one default DSS input row
   }
-
 
   function copyJson() {
     navigator.clipboard.writeText(document.getElementById('jsonPreview').textContent)
@@ -221,7 +217,7 @@
     .then(r => r.json())
     .then(d => {
       document.getElementById('apiResponseBox').textContent =
-        d;
+        JSON.stringify(d, null, 2);
     })
     .catch(err => {
       document.getElementById('apiResponseBox').textContent = "Error: " + err;
