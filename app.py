@@ -1,12 +1,30 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request,redirect, url_for, session, jsonify
 import json
 import requests
 import os
 from datetime import datetime
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key'
 CONFIG_FILE = 'config.json'
+USERS_FILE = "users.json"
+
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        return {}
+    with open(USERS_FILE) as f:
+        return json.load(f)
+
+USERS = load_users()
+
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if 'user' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return wrapper
 
 def load_config():
     if not os.path.exists(CONFIG_FILE):
@@ -14,10 +32,11 @@ def load_config():
     with open(CONFIG_FILE, 'r') as f:
         return json.load(f)
 
-def log_payload(environment, payload, response_text, status_code):
+def log_payload(user,environment, payload, response_text, status_code):
     print("📦 Log written for:", environment or "(none)")
     log_entry = {
         "timestamp": datetime.now().isoformat(),
+        "user": user,
         "environment": environment or "UNKNOWN",
         "entries": payload or {},
         "response_status": status_code,
@@ -26,9 +45,28 @@ def log_payload(environment, payload, response_text, status_code):
     with open("sent_payloads_log.jsonl", "a") as f:
         f.write(json.dumps(log_entry) + "\n")
 
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        if USERS.get(username) == password:
+            session['user'] = username
+            return redirect(url_for('index'))
+        return render_template('login.html', error="❌ Invalid credentials")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('login'))
+
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 def index():
     config = load_config()
+    user = session['user']
 
     if request.method == 'POST':
         print("📝 Received POST request", flush=True)
@@ -64,16 +102,16 @@ def index():
                 message = "✅ DSS updated"
             else:
                 success = False
-                message = f"❌ Failed {response.status_code}"
+                message = f" Failed {response.status_code}"
 
         except Exception as e:
             success = False
-            message = f"❌ Exception: {str(e)}"
+            message = f" Exception: {str(e)}"
             response_text = str(e)
             status_code = 500
 
         finally:
-            log_payload(environment, wrapper, response_text, status_code)
+            log_payload(user,environment, wrapper, response_text, status_code)
 
         return jsonify({"success": success, "message": message, "response": response_text}), status_code
 

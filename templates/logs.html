@@ -37,6 +37,7 @@
     <thead>
       <tr>
         <th>⏱ Timestamp</th>
+        <th> User </th>
         <th>🌐 Environment</th>
         <th>📦 DSS Entries</th>
         <th>📊 Status</th>
@@ -47,6 +48,7 @@
       {% for entry in logs %}
         <tr>
           <td>{{ entry.timestamp }}</td>
+          <td>{{ entry.user or '—' }}</td>
           <td>{{ entry.environment }}</td>
           <td>
             <table class="dss-table">
