@@ -1,80 +1,164 @@
+# 🛠️ Pega DSS Update Tool
 
-# 📘 Commit Comparison Report Tool
+A lightweight Flask web interface to update DSS (Dynamic System Settings) in your Pega environments using REST APIs. Supports JSON payload preview, mock testing, request logging, and detailed API response display.
 
-A Python-based tool to **compare artifact versions across environments** and generate a **color-coded HTML report** showing which deployments are in sync and which differ. Optional timestamps provide deployment history context.
+---
 
-## 🚀 Features
+## ✨ Features
 
-- ✅ CLI-like argument parsing (e.g., `group=myapp base_env=dev flag=blue`)
-- ✅ Compares artifacts across `dev-blue`, `dev-green`, `stage`, `prod`
-- ✅ Outputs a beautiful HTML report
-- ✅ Shows `SAME` (🟢), `DIFF` (🔴), `BASE`, and `N/A`
-- ✅ Optionally shows deployment timestamps
-- ✅ Customizable environment expansion (e.g., blue/green split)
+- ✅ Web form to construct DSS payloads
+- 🔄 Real-time JSON payload preview
+- 📤 Submit DSS updates to selected environment
+- 📁 View all previously submitted payloads and responses
+- 💾 Download JSON payload
+- 🧪 Send mock requests to [httpbin.org](https://httpbin.org) for testing
+- 🔐 Flash messaging for success/failure
+- 📜 Logging of all submitted requests and responses
+
+---
 
 ## 📦 Project Structure
 
 ```
-project/
-├── main.py
-├── input.json
-├── utils.py
-├── comparison_report.html
-└── README.md
+pega_dss/
+├── app.py                 # Main Flask application
+├── config.json            # Environment-to-URL mapping
+├── sent_payloads_log.jsonl  # Logs of submitted DSS requests (JSONL format)
+├── templates/
+│   ├── index.html         # UI for DSS form and preview
+│   └── logs.html          # Table view for past logs
+└── static/                # (optional) static assets like CSS/JS if added
 ```
 
-## 🧰 Requirements
+---
 
-- Python 3.6+
-- `requests`
+## 🚀 How to Run
 
-Install with:
+### ✅ 1. Clone the Repository
 
 ```bash
-pip install requests
+git clone https://github.com/your-org/pega-dss-tool.git
+cd pega-dss-tool
 ```
 
-## 🧾 Example Usage
+### ✅ 2. Set Up a Virtual Environment (Recommended)
 
 ```bash
-python main.py group=myapp base_env=dev flag=blue timestamp=true
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-## 📄 Input JSON Format
+### ✅ 3. Install Dependencies
+
+```bash
+pip install flask requests
+```
+
+### ✅ 4. Prepare Config
+
+Edit `config.json` to add your Pega environments:
 
 ```json
 {
-  "myapp-blue": {
-    "dev-blue": { "artifact": "abc123", "deploymenttime": "1716102000000" }
-  },
-  "myapp-green": {
-    "dev-green": { "artifact": "abc456", "deploymenttime": "1716102100000" }
-  },
-  "myapp": {
-    "stage": { "artifact": "abc123", "deploymenttime": "1716102200000" },
-    "prod": { "artifact": "abc789", "deploymenttime": "1716102300000" }
-  }
+  "Dev": "https://dev-pega.example.com/prweb/api/v1/dss/update",
+  "QA": "https://qa-pega.example.com/prweb/api/v1/dss/update",
+  "mock": "https://httpbin.org/post"
 }
 ```
 
-## 🎨 HTML Output Example
+### ✅ 5. Run the App
 
-| APP NAME   | dev-blue     | dev-green (BASE) | stage         | prod          |
-|------------|--------------|------------------|----------------|----------------|
-| myapp      | abc123 🟢     | abc123 🔵         | abc123 🟢       | abc789 🔴       |
+```bash
+python app.py
+```
 
-🕒 Timestamp shown below each value if `timestamp=true` is passed.
+Visit [http://localhost:5000](http://localhost:5000) in your browser.
 
-## 📥 Output
+---
 
-- A file named `commit_comparison_report.html` is generated.
-- You can open it in any browser.
+## 🔐 Security Note
 
-## ⚙️ CLI Parameters
+Make sure you replace this line in `app.py` with a secure method in production:
 
-| Param         | Description                                      | Example         |
-|---------------|--------------------------------------------------|-----------------|
-| `group`       | Group name or app identifier                     | `myapp`         |
-| `base_env`    | Base environment name (e.g., `dev`)              | `dev`           |
-| `flag`        | Flag to distinguish blue/green environments      | `blue` or `green` |
-| `timestamp`   | Show deployment timestamp (`true`/`false`)       | `true`          |
+```python
+app.secret_key = 'your-secret-key'
+```
+
+Instead, load from an environment variable:
+
+```python
+import os
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'fallback-dev-key')
+```
+
+---
+
+## 📖 Usage Guide
+
+### 1. Open `http://localhost:5000`
+- Select environment
+- Add one or more DSS entries:
+  - OwningRuleSet
+  - Setting
+  - Value
+- See the real-time JSON preview
+- Click **"🛡️ Reconfirm & Submit"** to push the data
+
+### 2. To Test with Mock:
+- Choose environment `"mock"` (or use `Send` button under "SendToMock")
+
+### 3. To View Logs:
+- Go to: [http://localhost:5000/logs](http://localhost:5000/logs)
+- Shows:
+  - Timestamp
+  - Environment
+  - DSS Payload
+  - Response Status
+  - Response Body (pretty-printed)
+
+---
+
+## 📂 Logging Format (`sent_payloads_log.jsonl`)
+
+Each log entry is stored as a single line JSON object:
+
+```json
+{
+  "timestamp": "2025-07-16T12:22:17.873378",
+  "environment": "mock",
+  "entries": {
+    "DSSList": [
+      {
+        "OwningRuleSet": "abcd",
+        "Setting": "wd",
+        "Value": "de"
+      }
+    ]
+  },
+  "response_status": 200,
+  "response_text": "{... full API response ...}"
+}
+```
+
+---
+
+## ✅ Optional Enhancements
+
+- 🧪 Add unit tests with `pytest`
+- 🔐 Secure with basic auth or login page
+- 📦 Dockerize for containerized deployment
+- 📧 Add email alerts on failure
+- 🛡️ Integrate with Pega authentication/token APIs
+
+---
+
+## 🧑‍💻 Author
+
+**Your Name / Team**  
+Contact: `your.email@example.com`
+
+---
+
+## 📄 License
+
+MIT License — free to use, modify, and distribute.
