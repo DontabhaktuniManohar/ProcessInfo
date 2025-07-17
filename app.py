@@ -53,12 +53,14 @@ def login():
         allowed_users = load_allowed_users()
         if username in allowed_users:
             session['user'] = username
-            session['password'] = password  # if you want to use it later in POST
+            session['password'] = password
             return redirect(url_for('index'))
         else:
-            flash("Access denied. Unauthorized user.", "error")
-            return redirect(url_for('login'))
-    return render_template('login.html')
+            error = "Access denied. Unauthorized user."
+            return render_template('login.html', error=error)
+
+    return render_template('login.html', error=None)
+
 
 
 @app.route('/logout')
