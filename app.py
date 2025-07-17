@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request,redirect, url_for, session, jsonify
+from flask import Flask, render_template, request,redirect, url_for, session, flash,jsonify
 import json
 import requests
 import os
@@ -10,13 +10,12 @@ app.secret_key = 'your-secret-key'
 CONFIG_FILE = 'config.json'
 USERS_FILE = "users.json"
 
-def load_users():
-    if not os.path.exists(USERS_FILE):
-        return {}
-    with open(USERS_FILE) as f:
-        return json.load(f)
-
-USERS = load_users()
+def load_allowed_users():
+    try:
+        with open(USERS_FILE,"r") as f:
+            return json.load(f).get("allowed_users", [])
+    except Exception:
+        return []
 
 def login_required(f):
     @wraps(f)
@@ -49,13 +48,18 @@ def log_payload(user,environment, payload, response_text, status_code):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
-        if USERS.get(username) == password:
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        allowed_users = load_allowed_users()
+        if username in allowed_users:
             session['user'] = username
+            session['password'] = password  # if you want to use it later in POST
             return redirect(url_for('index'))
-        return render_template('login.html', error="❌ Invalid credentials")
+        else:
+            flash("Access denied. Unauthorized user.", "error")
+            return redirect(url_for('login'))
     return render_template('login.html')
+
 
 @app.route('/logout')
 def logout():
@@ -67,6 +71,7 @@ def logout():
 def index():
     config = load_config()
     user = session['user']
+    password = session['password']
 
     if request.method == 'POST':
         print("📝 Received POST request", flush=True)
@@ -91,8 +96,9 @@ def index():
 
             print("Sending payload to Pega:")
             print(json.dumps(wrapper, indent=2), flush=True)
+            print("user:", user, "password:", password, flush=True)
 
-            response = requests.post(url, json=wrapper, auth=('pega_user', 'pega_pass'), timeout=15)
+            response = requests.post(url, json=wrapper, auth=(user, password), timeout=15)
 
             response_text = response.text
             status_code = response.status_code
