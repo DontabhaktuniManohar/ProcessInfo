@@ -1,0 +1,227 @@
+import os
+import requests
+from pathlib import Path
+import pandas as pd
+from xml.etree import ElementTree as ET
+
+# Setup
+env_name = "TDC"
+url_list_file = f"{env_name}.txt"
+request_dir = Path("./request")
+result_file = Path("code_result.csv")
+report_file = Path("report_file.html")
+bad_response_dir = Path("responsefiles/bad_responses")
+response_dir = Path("responsefiles")
+
+# Ensure necessary directories exist
+os.makedirs(bad_response_dir, exist_ok=True)
+os.makedirs(response_dir, exist_ok=True)
+
+# Read URLs from file
+with open(url_list_file, "r") as f:
+    url_list = [line.strip() for line in f if line.strip()]
+
+# Process XML files for each URL
+results = []
+
+for api_url in url_list:
+    base_host = api_url.split("/")[2].split(":")[0]
+    port = api_url.split("/")[2].split(":")[1]
+
+    for xml_file in request_dir.glob("ECPD*.xml"):
+        with open(xml_file, "r") as f:
+            xml_data = f.read()
+
+        # Perform HTTP POST request
+        try:
+            response = requests.post(
+                api_url,
+                headers={"Content-Type": "application/xml"},
+                data=xml_data,
+                timeout=10
+            )
+            status_code = response.status_code
+            response_text = response.text
+        except Exception as e:
+            results.append((xml_file.name, "REQUEST_FAILED"))
+            continue
+
+        # Save raw response
+        response_filename = response_dir / f"response_{base_host}_{port}_{xml_file.name}"
+        with open(response_filename, "w") as f:
+            f.write(response_text)
+
+        # Handle non-200 HTTP codes
+        if status_code != 200:
+            results.append((xml_file.name, status_code))
+            bad_file = bad_response_dir / f"bad_{base_host}_{port}_{xml_file.name}"
+            with open(bad_file, "w") as f:
+                f.write(response_text)
+            continue
+
+        # Parse XML and extract <code>
+        try:
+            root = ET.fromstring(response_text)
+            code = root.findtext("code")
+            results.append((xml_file.name, code if code else "NO_CODE"))
+        except ET.ParseError:
+            results.append((xml_file.name, "INVALID_XML"))
+            bad_file = bad_response_dir / f"bad_{base_host}_{port}_{xml_file.name}"
+            with open(bad_file, "w") as f:
+                f.write(response_text)
+
+# Save result to CSV and HTML
+df = pd.DataFrame(results, columns=["FILE_NAME", "CODE"])
+df.to_csv(result_file, index=False)
+df.to_html(report_file, index=False)
+
+
+
+import urllib.parse
+
+if "application/x-www-form-urlencoded" in content_type.lower():
+    # Parse and decode
+    parsed = urllib.parse.parse_qs(response.text)
+    if "response" in parsed:
+        xml_str = parsed["response"][0]
+    else:
+        results.append((xml_file.name, "NO_RESPONSE_FIELD"))
+        continue
+else:
+    xml_str = response.text
+
+# Now parse XML
+try:
+    root = ET.fromstring(xml_str)
+    code = root.find(".//ns:RespMsg/ns:Code", namespaces=ns)
+    results.append((xml_file.name, code.text if code is not None else "NO_CODE"))
+except ET.ParseError:
+    results.append((xml_file.name, "INVALID_XML"))
+
+
+
+import requests
+import xml.etree.ElementTree as ET
+import re
+
+# Namespace used in the XML
+ns = {'ns': 'http://www.vzw.com/namespaces/scmplus'}
+
+def extract_valid_xml(xml_text):
+    """
+    Extracts the XML section from inside any wrapping junk like HTML.
+    Looks for known root tag: <RespViewPurchases>...</RespViewPurchases>
+    """
+    match = re.search(r"(<RespViewPurchases.*?</RespViewPurchases>)", xml_text, re.DOTALL)
+    return match.group(1) if match else None
+
+def parse_respmsg_code(xml_string):
+    try:
+        root = ET.fromstring(xml_string)
+        code = root.find(".//ns:RespMsg/ns:Code", namespaces=ns)
+        return code.text if code is not None else "NO_CODE"
+    except ET.ParseError as e:
+        return f"INVALID_XML: {e}"
+
+# Example URL and XML payload
+url = "http://your-api-endpoint-here"
+xml_payload = """<your-request-body-here>...</your-request-body-here>"""
+
+try:
+    response = requests.post(url, headers={"Content-Type": "application/xml"}, data=xml_payload, timeout=10)
+    response_text = response.text.strip()
+
+    # Try to extract only the valid XML part
+    xml_clean = extract_valid_xml(response_text)
+
+    if xml_clean:
+        code = parse_respmsg_code(xml_clean)
+        print("RespMsg Code:", code)
+    else:
+        print("Could not extract valid XML from response.")
+
+except Exception as e:
+    print("Request failed:", str(e))
+
+
+
+
+import csv
+
+data = [
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-03', 'RuleCount': 4},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-04', 'RuleCount': 15},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-07', 'RuleCount': 2},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-08', 'RuleCount': 6},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-09', 'RuleCount': 1},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-10', 'RuleCount': 10},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-11', 'RuleCount': 2},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-12', 'RuleCount': 6},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-13', 'RuleCount': 5},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-15', 'RuleCount': 5},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-16', 'RuleCount': 8},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-17', 'RuleCount': 1},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-18', 'RuleCount': 1},
+    {'RuleSetName': 'VZDMInt', 'RuleSetVersion': '07-17-10', 'RuleCount': 5},
+    {'RuleSetName': 'VZDMInt', 'RuleSetVersion': '07-17-12', 'RuleCount': 2},
+    {'RuleSetName': 'VZDMInt', 'RuleSetVersion': '07-17-14', 'RuleCount': 1},
+    {'RuleSetName': 'VZDMRMAP', 'RuleSetVersion': '07-17-01', 'RuleCount': 2},
+    {'RuleSetName': 'VZDM-Artifacts', 'RuleSetVersion': '07-17-02', 'RuleCount': 2},
+    {'RuleSetName': 'VZDM-Artifacts', 'RuleSetVersion': '07-17-04', 'RuleCount': 1},
+]
+
+# Write to CSV
+with open('ruleset_output.csv', mode='w', newline='') as file:
+    writer = csv.DictWriter(file, fieldnames=['RuleSetName', 'RuleSetVersion', 'RuleCount'])
+    writer.writeheader()
+    writer.writerows(data)
+
+print("CSV file 'ruleset_output.csv' written successfully.")
+
+
+
+from collections import defaultdict
+import csv
+
+# Sample input data
+data = [
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-03', 'RuleCount': 4},
+    {'RuleSetName': 'VZDM', 'RuleSetVersion': '07-17-04', 'RuleCount': 15},
+    {'RuleSetName': 'VZDMInt', 'RuleSetVersion': '07-17-10', 'RuleCount': 5},
+    {'RuleSetName': 'VZDM-Artifacts', 'RuleSetVersion': '07-17-02', 'RuleCount': 2},
+    {'RuleSetName': 'VZDM-Artifacts', 'RuleSetVersion': '07-17-04', 'RuleCount': 1},
+    {'RuleSetName': 'VZDMRMAP', 'RuleSetVersion': '07-17-01', 'RuleCount': 2},
+    # ... Add the rest of your data here
+]
+
+# Build a dictionary with RuleSetVersion as rows and RuleSetNames as columns
+pivot_data = defaultdict(dict)
+rule_set_names = set()
+
+for entry in data:
+    version = entry['RuleSetVersion']
+    name = entry['RuleSetName']
+    count = entry['RuleCount']
+    pivot_data[version][name] = count
+    rule_set_names.add(name)
+
+# Sort the headers and rows
+sorted_versions = sorted(pivot_data.keys())
+sorted_names = sorted(rule_set_names)
+
+# Write to CSV
+with open("pivot_output.csv", "w", newline="") as csvfile:
+    writer = csv.writer(csvfile)
+    
+    # Header row
+    header = ["VERSION"] + sorted_names
+    writer.writerow(header)
+    
+    # Each row: version + rule counts (default 0 if missing)
+    for version in sorted_versions:
+        row = [version]
+        for name in sorted_names:
+            row.append(pivot_data[version].get(name, ""))
+        writer.writerow(row)
+
+print("Pivot-style CSV written as 'pivot_output.csv'")
