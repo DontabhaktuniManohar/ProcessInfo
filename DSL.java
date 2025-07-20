@@ -164,3 +164,41 @@ public class TestRunner {
                 results.getScenariosTotal());
     }
 }
+
+writePrometheusMetricsToFile(); // 👈 Add this
+testExecutionStatus.set(0);
+
+
+import io.prometheus.client.Collector;
+import io.prometheus.client.CollectorRegistry;
+import java.io.FileWriter;
+import java.io.IOException;
+
+private void writePrometheusMetricsToFile() {
+    String fileName = "karate-prometheus-metrics.txt";
+    try (FileWriter writer = new FileWriter(fileName)) {
+        StringBuilder builder = new StringBuilder();
+        for (Collector.MetricFamilySamples samples : CollectorRegistry.defaultRegistry.metricFamilySamples()) {
+            builder.append("# HELP ").append(samples.name).append(" ").append(samples.help).append("\n");
+            builder.append("# TYPE ").append(samples.name).append(" ").append(samples.type.name().toLowerCase()).append("\n");
+            for (Collector.MetricFamilySamples.Sample sample : samples.samples) {
+                builder.append(sample.name);
+                if (!sample.labelNames.isEmpty()) {
+                    builder.append("{");
+                    for (int i = 0; i < sample.labelNames.size(); i++) {
+                        builder.append(sample.labelNames.get(i)).append("=\"").append(sample.labelValues.get(i)).append("\"");
+                        if (i < sample.labelNames.size() - 1) {
+                            builder.append(",");
+                        }
+                    }
+                    builder.append("}");
+                }
+                builder.append(" ").append(sample.value).append("\n");
+            }
+        }
+        writer.write(builder.toString());
+        System.out.println("📝 Prometheus metrics written to: " + fileName);
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
