@@ -1,3 +1,86 @@
+import com.intuit.karate.Results;
+import com.intuit.karate.Runner;
+import io.prometheus.client.Collector;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Counter;
+import io.prometheus.client.Gauge;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Enumeration;
+
+public class TestRunner {
+
+    // Prometheus metrics
+    static final Counter testPass = Counter.build()
+            .name("karate_test_pass")
+            .help("Total passed Karate test scenarios")
+            .register();
+
+    static final Counter testFail = Counter.build()
+            .name("karate_test_failure")
+            .help("Total failed Karate test scenarios")
+            .register();
+
+    static final Gauge executionStatus = Gauge.build()
+            .name("karate_test_execution_status")
+            .help("Karate test execution status (1=running, 0=done)")
+            .register();
+
+    public static void main(String[] args) {
+        executionStatus.set(1); // Set to running
+
+        Results results = Runner.path("classpath:health-check-endpoints")
+                .tags("~@ignore")
+                .parallel(1);
+
+        int passed = results.getScenariosPassed();
+        int failed = results.getScenariosFailed();
+
+        testPass.inc(passed);
+        testFail.inc(failed);
+        executionStatus.set(0); // Set to done
+
+        writePrometheusMetricsToFile();
+    }
+
+    private static void writePrometheusMetricsToFile() {
+        String fileName = "karate-prometheus-metrics.txt";
+        try (FileWriter writer = new FileWriter(fileName)) {
+            StringBuilder builder = new StringBuilder();
+
+            Enumeration<Collector.MetricFamilySamples> enumeration = CollectorRegistry.defaultRegistry.metricFamilySamples();
+            for (Collector.MetricFamilySamples samples : Collections.list(enumeration)) {
+                builder.append("# HELP ").append(samples.name).append(" ").append(samples.help).append("\n");
+                builder.append("# TYPE ").append(samples.name).append(" ").append(samples.type.name().toLowerCase()).append("\n");
+                for (Collector.MetricFamilySamples.Sample sample : samples.samples) {
+                    builder.append(sample.name);
+                    if (!sample.labelNames.isEmpty()) {
+                        builder.append("{");
+                        for (int i = 0; i < sample.labelNames.size(); i++) {
+                            builder.append(sample.labelNames.get(i)).append("=\"").append(sample.labelValues.get(i)).append("\"");
+                            if (i < sample.labelNames.size() - 1) {
+                                builder.append(",");
+                            }
+                        }
+                        builder.append("}");
+                    }
+                    builder.append(" ").append(sample.value).append("\n");
+                }
+            }
+
+            writer.write(builder.toString());
+            System.out.println("✅ Prometheus metrics written to: " + fileName);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 
