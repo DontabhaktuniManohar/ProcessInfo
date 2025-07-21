@@ -1,4 +1,3 @@
-# Also serve landing page at /index.html
 from flask import Flask, render_template, request,redirect, url_for, session, flash,jsonify
 import json
 import requests
@@ -136,7 +135,73 @@ def update_config():
         return jsonify({"success": success, "message": message, "response": response_text}), status_code
 
     return render_template('updateDSSConfig.html', environments=list(config.keys()), config=config)
+# Compare environments endpoint
+@app.route('/compare-env', methods=['GET', 'POST'])
+@login_required
+def compare_env():
+    config = load_config()
+    env1 = request.args.get('env1') or request.form.get('env1')
+    env2 = request.args.get('env2') or request.form.get('env2')
+    result_table = None
+    error = None
+    url1_display = None
+    url2_display = None
+    payload_display = None
+    headers_display = None
 
+    if request.method == 'POST':
+        try:
+            if not env1 or not env2:
+                raise ValueError('Both env1 and env2 must be specified.')
+            url1 = config.get(env1)
+            url2 = config.get(env2)
+            if not url1 or not url2:
+                raise ValueError('Invalid environment selection.')
+
+            # Append required paths
+            url1 = url1.rstrip('/') + '/V1/CrossEnvDssCompare'
+            url2 = url2.rstrip('/') + '/V1/getDssDetails'
+            url1_display = url1
+            url2_display = url2
+
+            user = session['user']
+            password = session['password']
+
+            # Prepare headers
+            headers = {
+                'envtocompare': url2,
+                'noofday': '1'
+            }
+            headers_display = headers
+
+            # Prepare payload for first env
+            payload = {}  # Customize as needed
+            payload_display = payload
+
+            # Send POST to first environment with headers
+            response1 = requests.post(url1, json=payload, auth=(user, password), headers=headers, timeout=15)
+
+            # Parse response
+            data1 = response1.json() if response1.status_code == 200 else {}
+
+            # Build table using only env1 response
+            rows = []
+            dss_list1 = data1.get('DSS List', [])
+            for d1 in dss_list1:
+                rows.append({
+                    'name': d1.get('Name of DSS'),
+                    'env1_value': d1.get('Value'),
+                    'env2_value': d1.get('Compared Env Value'),
+                    'env1_updated': d1.get('Updated Date Time'),
+                    'env2_updated': d1.get('Compared Env Updated Time'),
+                    'env1_operator': d1.get('Updated Operator'),
+                    'env2_operator': d1.get('Compared Env Updated Operator')
+                })
+            result_table = rows
+        except Exception as e:
+            error = str(e)
+
+    return render_template('compare_env.html', config=config, env1=env1, env2=env2, result_table=result_table, error=error, url1=url1_display, url2=url2_display, payload=payload_display, headers=headers_display)
 @app.route('/logs')
 def view_logs():
     logs = []

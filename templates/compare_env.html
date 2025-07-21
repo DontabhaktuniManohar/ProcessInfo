@@ -1,0 +1,323 @@
+
+<!doctype html>
+<html>
+<head>
+  <title>Compare Environments</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #232526 0%, #414345 100%);
+      color: #f3f3f3;
+    }
+    .wrapper {
+      display: flex;
+      min-height: 70vh;
+      gap: 2.5rem;
+      justify-content: center;
+      align-items: stretch;
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .form-section, .result-section {
+      padding: 2.5rem 2.5rem;
+      flex: 1 1 0;
+      background: rgba(34, 34, 34, 0.97);
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      margin-top: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-width: 400px;
+      min-height: 500px;
+    }
+    .form-section {
+      border-right: 2px solid #2d8cf0;
+      max-width: 420px;
+      align-items: center;
+    }
+    .result-section {
+      margin-left: 0;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    h2 {
+      color: #2d8cf0;
+      text-align: center;
+      letter-spacing: 1px;
+      margin-bottom: 1.5rem;
+    }
+    label {
+      font-weight: 700;
+      color: #f3f3f3;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    select, button {
+      padding: 10px;
+      margin-bottom: 18px;
+      border-radius: 8px;
+      border: 1px solid #2d8cf0;
+      font-size: 1em;
+      width: 100%;
+      background: #181818;
+      color: #f3f3f3;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+    select:focus, button:focus {
+      outline: none;
+      border-color: #fa5;
+      box-shadow: 0 0 0 2px #fa5;
+    }
+    .btn {
+      background: linear-gradient(90deg, #2d8cf0 0%, #1a6fb3 100%);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+      border-radius: 8px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(45,140,240,0.15);
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .btn:hover {
+      background: linear-gradient(90deg, #1a6fb3 0%, #2d8cf0 100%);
+      box-shadow: 0 4px 16px rgba(45,140,240,0.18);
+    }
+    .error {
+      color: #e74c3c;
+      text-align: center;
+      margin-bottom: 16px;
+      font-weight: bold;
+      background: #2c1a1a;
+      border-radius: 6px;
+      padding: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+      background: #222;
+      color: #eee;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(45,140,240,0.08);
+    }
+    th, td {
+      border: 1px solid #2d8cf0;
+      padding: 12px 10px;
+      text-align: center;
+      font-size: 1em;
+    }
+    th {
+      background: linear-gradient(90deg, #2d8cf0 0%, #1a6fb3 100%);
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    tr:hover td {
+      background: #181818;
+      color: #fa5;
+      transition: background 0.2s, color 0.2s;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 32px;
+      color: #888;
+      font-size: 0.9em;
+      padding-bottom: 1rem;
+    }
+    .card {
+      background: #222;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(45,140,240,0.08);
+      padding: 1.5rem;
+      margin-bottom: 24px;
+    }
+    .info-label {
+      color: #fa5;
+      font-weight: bold;
+    }
+    pre {
+      background: #181818;
+      color: #0af;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.95em;
+      margin: 0.5rem 0;
+      display: inline-block;
+    }
+    @media (max-width: 900px) {
+      .wrapper { flex-direction: column; gap: 0; }
+      .form-section, .result-section { margin-top: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div style="background:linear-gradient(90deg,#232526 0%,#2d8cf0 100%); color:#eee; padding:1.2rem 2rem; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 12px rgba(45,140,240,0.12);">
+    <h2 style="margin:0; font-size:2rem; letter-spacing:1px;">🔎 Compare Environments</h2>
+    <div style="position:relative;">
+      <button id="userButton" onclick="toggleDropdown()" style="background:linear-gradient(90deg,#2d8cf0 0%,#1a6fb3 100%); border:none; color:#fff; font-weight:bold; cursor:pointer; border-radius:8px; padding:8px 18px; font-size:1em; box-shadow:0 2px 8px rgba(45,140,240,0.15);">
+        👤 {{ session['user'] }} ▼
+      </button>
+      <div id="dropdownMenu" style="display:none; position:absolute; right:0; top:100%; background:#222; border:1px solid #2d8cf0; border-radius:8px; padding:0.5rem; min-width:170px; box-shadow:0 2px 16px rgba(45,140,240,0.18); z-index:10;">
+        <a href="/logs" style="display:block; color:#0af; text-decoration:none; padding:8px 12px; border-radius:6px; font-weight:500; margin-bottom:4px;">📜 View Logs</a>
+        <a href="/logout" style="display:block; color:#fa5; text-decoration:none; padding:8px 12px; border-radius:6px; font-weight:500;">🚪 Logout</a>
+      </div>
+    </div>
+  </div>
+  <div class="wrapper">
+    <div class="form-section">
+      <h2 style="text-align:center; margin-bottom:2rem;">Select Environments</h2>
+      {% if error %}
+        <div class="error">{{ error }} <a href="#" id="retryLink" style="color:#0af; text-decoration:underline; margin-left:10px;">Try again</a></div>
+      {% endif %}
+      <form method="post" id="compareForm">
+        <label for="env1">Environment 1:</label>
+        <input list="env1-list" name="env1" id="env1" value="{{ env1 or '' }}" required autocomplete="off" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2d8cf0; background:#181818; color:#f3f3f3;">
+        <datalist id="env1-list">
+          {% for env in config.keys() %}
+            <option value="{{ env }}"></option>
+          {% endfor %}
+        </datalist>
+        <label for="env2">Environment 2:</label>
+        <input list="env2-list" name="env2" id="env2" value="{{ env2 or '' }}" required autocomplete="off" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2d8cf0; background:#181818; color:#f3f3f3;">
+        <datalist id="env2-list">
+          {% for env in config.keys() %}
+            <option value="{{ env }}"></option>
+          {% endfor %}
+        </datalist>
+        <button type="submit" class="btn" id="compareBtn" style="margin-top:18px;" disabled>
+          <span id="compareBtnText">Compare</span>
+          <span id="spinner" style="display:none; margin-left:8px;">
+            <svg width="18" height="18" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="31.4 31.4" transform="rotate(-90 25 25)"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.8s" repeatCount="indefinite"/></circle></svg>
+          </span>
+        </button>
+      </form>
+      <div style="margin-top:1.5rem;">
+        <label for="history" style="margin-top:1rem;">History:</label>
+        <select id="history" style="width:100%; padding:10px; border-radius:8px; border:1.5px solid #2d8cf0; background:#181818; color:#fa5; font-size:1em; margin-top:0.5rem;">
+          <option value="">Select previous comparison</option>
+          {% if history %}
+            {% for item in history %}
+              <option value="{{ item.env1 }}|{{ item.env2 }}">{{ item.env1 }} vs {{ item.env2 }} ({{ item.timestamp }})</option>
+            {% endfor %}
+          {% endif %}
+        </select>
+      </div>
+    </div>
+    <div class="result-section">
+      <h2 style="text-align:center; margin-bottom:2rem;">Comparison Result</h2>
+      {% if env1 and env2 %}
+        <div class="card" style="max-width:900px; margin:0 auto;">
+          <span class="info-label">Comparison selected between </span>
+          <span style="color:#0af; font-weight:bold;">{{ env1 }}</span>
+          <span class="info-label"> and </span>
+          <span style="color:#fa5; font-weight:bold;">{{ env2 }}</span><br>
+          <span class="info-label">Payload:</span> <pre>{{ payload | tojson }}</pre><br>
+          {% if headers %}
+            <span class="info-label">Headers:</span> <pre style="color:#fa5;">{{ headers | tojson }}</pre>
+          {% endif %}
+          <button class="btn" id="downloadBtn" style="margin-top:1rem;" data-json='{{ result_table | tojson | safe }}'>Download as JSON</button>
+        </div>
+      {% endif %}
+      {% if result_table %}
+        <div style="width:100%; display:flex; justify-content:center;">
+        <table style="max-width:900px; width:100%; margin:0 auto;">
+          <thead>
+            <tr>
+              <th>DSS Name</th>
+              <th style="background:#1a6fb3;">Env1 Value</th>
+              <th style="background:#2d8cf0;">Env2 Value</th>
+              <th>Updated Date (Env1)</th>
+              <th>Updated Date (Env2)</th>
+              <th>Operator (Env1)</th>
+              <th>Operator (Env2)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in result_table %}
+              <tr>
+                <td>{{ row.name }}</td>
+                <td style="background:#181818; color:#0af;">{{ row.env1_value }}</td>
+                <td style="background:#181818; color:#fa5;">{{ row.env2_value }}</td>
+                <td>{{ row.env1_updated }}</td>
+                <td>{{ row.env2_updated }}</td>
+                <td>{{ row.env1_operator }}</td>
+                <td>{{ row.env2_operator }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p style="color:#aaa; text-align:center; margin-top:3rem;">No comparison data yet.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="footer">&copy; {{ year if year else '2025' }} ProcessInfo. All rights reserved.</div>
+  <script>
+    function toggleDropdown() {
+      const menu = document.getElementById("dropdownMenu");
+      menu.style.display = (menu.style.display === "block") ? "none" : "block";
+    }
+    document.addEventListener("click", function(event) {
+      const button = document.getElementById("userButton");
+      const menu = document.getElementById("dropdownMenu");
+      if (!button.contains(event.target) && !menu.contains(event.target)) {
+        menu.style.display = "none";
+      }
+    });
+
+    // Enable/disable Compare button based on input
+    function updateCompareBtnState() {
+      const env1 = document.getElementById('env1').value.trim();
+      const env2 = document.getElementById('env2').value.trim();
+      const btn = document.getElementById('compareBtn');
+      btn.disabled = !(env1 && env2);
+    }
+    document.getElementById('env1').addEventListener('input', updateCompareBtnState);
+    document.getElementById('env2').addEventListener('input', updateCompareBtnState);
+
+    // Spinner on Compare click
+    document.getElementById('compareForm').addEventListener('submit', function(e) {
+      const btn = document.getElementById('compareBtn');
+      document.getElementById('compareBtnText').style.display = 'none';
+      document.getElementById('spinner').style.display = 'inline-block';
+      btn.disabled = true;
+    });
+
+    // History dropdown: auto-fill environments
+    document.getElementById('history')?.addEventListener('change', function() {
+      const val = this.value;
+      if (val && val.includes('|')) {
+        const [env1, env2] = val.split('|');
+        document.getElementById('env1').value = env1;
+        document.getElementById('env2').value = env2;
+        updateCompareBtnState();
+      }
+    });
+
+    // Download button for JSON
+    document.getElementById('downloadBtn')?.addEventListener('click', function() {
+      const data = JSON.parse(this.getAttribute('data-json'));
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'comparison_result.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    // Error retry link
+    document.getElementById('retryLink')?.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('compareForm').submit();
+    });
+  </script>
+</body>
+</html>
