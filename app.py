@@ -1,3 +1,4 @@
+# Also serve landing page at /index.html
 from flask import Flask, render_template, request,redirect, url_for, session, flash,jsonify
 import json
 import requests
@@ -54,7 +55,7 @@ def login():
         if username in allowed_users:
             session['user'] = username
             session['password'] = password
-            return redirect(url_for('index'))
+            return redirect('/index.html')
         else:
             error = "Access denied. Unauthorized user."
             return render_template('login.html', error=error)
@@ -71,6 +72,17 @@ def logout():
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
+    from datetime import datetime
+    return render_template('index.html', year=datetime.now().year)
+@app.route('/index.html', methods=['GET', 'POST'])
+@login_required
+def index_html():
+    from datetime import datetime
+    return render_template('index.html', year=datetime.now().year)
+# New route for config update
+@app.route('/update-config', methods=['GET', 'POST'])
+@login_required
+def update_config():
     config = load_config()
     user = session['user']
     password = session['password']
@@ -123,7 +135,7 @@ def index():
 
         return jsonify({"success": success, "message": message, "response": response_text}), status_code
 
-    return render_template('index.html', environments=list(config.keys()), config=config)
+    return render_template('updateDSSConfig.html', environments=list(config.keys()), config=config)
 
 @app.route('/logs')
 def view_logs():
