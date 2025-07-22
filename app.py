@@ -142,6 +142,7 @@ def compare_env():
     config = load_config()
     env1 = request.args.get('env1') or request.form.get('env1')
     env2 = request.args.get('env2') or request.form.get('env2')
+    noofdays = request.args.get('noofdays') or request.form.get('noofdays') or '1'
     result_table = None
     error = None
     url1_display = None
@@ -170,7 +171,7 @@ def compare_env():
             # Prepare headers
             headers = {
                 'envtocompare': url2,
-                'noofday': '1'
+                'noofday': str(noofdays)
             }
             headers_display = headers
 

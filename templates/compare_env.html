@@ -75,7 +75,7 @@
       margin-bottom: 0.5rem;
       display: block;
     }
-    select, button, input[list] {
+    select, button, input[list], input[type="number"] {
       padding: 10px;
       margin-bottom: 18px;
       border-radius: 8px;
@@ -87,7 +87,7 @@
       transition: border 0.2s, box-shadow 0.2s;
       box-sizing: border-box;
     }
-    select:focus, button:focus, input[list]:focus {
+    select:focus, button:focus, input[list]:focus, input[type="number"]:focus {
       outline: none;
       border-color: #fa5;
       box-shadow: 0 0 0 2px #fa5;
@@ -144,13 +144,6 @@
       background: #181818;
       color: #fa5;
       transition: background 0.2s, color 0.2s;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 32px;
-      color: #888;
-      font-size: 0.9em;
-      padding-bottom: 1rem;
     }
     .card {
       background: #222;
@@ -217,6 +210,8 @@
             <option value="{{ env }}"></option>
           {% endfor %}
         </datalist>
+        <label for="noofdays">No of Days:</label>
+        <input type="number" min="1" max="30" name="noofdays" id="noofday" value="{{ noofday or 1 }}" required style="margin-bottom:18px;">
         <button type="submit" class="btn" id="compareBtn" style="margin-top:18px;" disabled>
           <span id="compareBtnText">Compare</span>
           <span id="spinner" style="display:none; margin-left:8px;">
@@ -284,7 +279,6 @@
       {% endif %}
     </div>
   </div>
-  <div class="footer">&copy; {{ year if year else '2025' }} ProcessInfo. All rights reserved.</div>
   <script>
     function toggleDropdown() {
       const menu = document.getElementById("dropdownMenu");
@@ -302,11 +296,13 @@
     function updateCompareBtnState() {
       const env1 = document.getElementById('env1').value.trim();
       const env2 = document.getElementById('env2').value.trim();
+      const noofday = document.getElementById('noofday').value.trim();
       const btn = document.getElementById('compareBtn');
-      btn.disabled = !(env1 && env2);
+      btn.disabled = !(env1 && env2 && noofday);
     }
     document.getElementById('env1').addEventListener('input', updateCompareBtnState);
     document.getElementById('env2').addEventListener('input', updateCompareBtnState);
+    document.getElementById('noofday').addEventListener('input', updateCompareBtnState);
 
     // Spinner on Compare click
     document.getElementById('compareForm').addEventListener('submit', function(e) {
