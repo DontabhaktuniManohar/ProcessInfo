@@ -140,17 +140,17 @@ def update_config():
 @login_required
 def compare_env():
     config = load_config()
-    env1 = request.args.get('env1') or request.form.get('env1')
-    env2 = request.args.get('env2') or request.form.get('env2')
-    noofdays = request.args.get('noofdays') or request.form.get('noofdays') or '1'
-    result_table = None
-    error = None
-    url1_display = None
-    url2_display = None
-    payload_display = None
-    headers_display = None
+    env1 = request.form.get('env1') if request.method == 'POST' else None
+    env2 = request.form.get('env2') if request.method == 'POST' else None
+    noofday = request.form.get('noofdays') if request.method == 'POST' else 1
 
-    if request.method == 'POST':
+    payload = {}
+    headers = {}
+    result_table = []
+    response_status = None
+    response_message = None
+
+    if request.method == 'POST' and env1 and env2:
         try:
             if not env1 or not env2:
                 raise ValueError('Both env1 and env2 must be specified.')
@@ -162,8 +162,6 @@ def compare_env():
             # Append required paths
             url1 = url1.rstrip('/') + '/V1/CrossEnvDssCompare'
             url2 = url2.rstrip('/') + '/V1/getDssDetails'
-            url1_display = url1
-            url2_display = url2
 
             user = session['user']
             password = session['password']
@@ -171,13 +169,11 @@ def compare_env():
             # Prepare headers
             headers = {
                 'envtocompare': url2,
-                'noofday': str(noofdays)
+                'noofday': str(noofday)
             }
-            headers_display = headers
 
             # Prepare payload for first env
             payload = {}  # Customize as needed
-            payload_display = payload
 
             # Send POST to first environment with headers
             response1 = requests.post(url1, json=payload, auth=(user, password), headers=headers, timeout=15)
@@ -200,9 +196,22 @@ def compare_env():
                 })
             result_table = rows
         except Exception as e:
-            error = str(e)
+            response_status = 500
+            response_message = str(e)
 
-    return render_template('compare_env.html', config=config, env1=env1, env2=env2, result_table=result_table, error=error, url1=url1_display, url2=url2_display, payload=payload_display, headers=headers_display)
+    return render_template(
+        "compare_env.html",
+        config=config,
+        env1=env1,
+        env2=env2,
+        noofday=noofday,
+        payload=payload,
+        headers=headers,
+        result_table=result_table,
+        response_status=response_status,
+        response_message=response_message,
+        year=2025
+    )
 @app.route('/logs')
 def view_logs():
     logs = []
