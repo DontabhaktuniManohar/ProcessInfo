@@ -253,6 +253,25 @@
       .result-section, .card, .output-table-section table { max-width: 100%; }
       .output-table-section { padding: 1rem 0.2rem; }
     }
+    .btn-small {
+      padding: 6px 14px;
+      font-size: 0.95em;
+      background: #232526;
+      color: #2d8cf0;
+      border: 1.5px solid #2d8cf0;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      min-width: unset;
+      min-height: unset;
+      width: auto;
+      box-shadow: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-small:hover {
+      background: #2d8cf0;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -323,61 +342,55 @@
   </div>
   <div class="wrapper">
     <div class="result-section">
-      <h2 style="text-align:center; margin-bottom:2rem;">Comparison Result</h2>
       {% if env1 and env2 %}
-        <div class="card">
-          <span class="info-label">Comparison selected between </span>
-          <span style="color:#0af; font-weight:bold;">{{ env1 }}</span>
-          <span class="info-label"> and </span>
-          <span style="color:#fa5; font-weight:bold;">{{ env2 }}</span><br>
-          <span class="info-label">Payload:</span> <pre>{{ payload | tojson }}</pre><br>
-          {% if headers %}
-            <span class="info-label">Headers:</span> <pre style="color:#fa5;">{{ headers | tojson }}</pre>
-          {% endif %}
-          {% if response_status %}
-            <div style="margin-top:1rem; font-size:1.1em;">
-              <span class="info-label">Status:</span>
-              <span style="color:{{ 'limegreen' if response_status == 200 else '#e74c3c' }}; font-weight:bold;">
-                {{ response_status }}{% if response_message %} - {{ response_message }}{% endif %}
-              </span>
-            </div>
-          {% endif %}
-          <button class="btn" id="downloadBtn" style="margin-top:1rem;" data-json='{{ result_table | tojson | safe }}'>Download as JSON</button>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+          <div style="font-size:1.25rem; font-weight:bold; color:#fa5; text-align:center; flex:1;">
+            Comparison selected between
+            <span style="color:#0af;">{{ env1 }}</span>
+            and
+            <span style="color:#fa5;">{{ env2 }}</span>
+          </div>
+          <button id="downloadBtn"
+            class="btn-small"
+            style="margin-left:2rem; background:#232526; color:#2d8cf0; border:1.5px solid #2d8cf0; font-size:0.95em; font-weight:600; padding:6px 14px; border-radius:6px; min-width:unset; min-height:unset; width:auto; box-shadow:none; cursor:pointer;"
+            data-json='{{ result_table | tojson | safe }}'>
+            ⬇ Download JSON
+          </button>
         </div>
       {% endif %}
+      <div class="output-table-section">
+        {% if result_table %}
+          <table>
+            <thead>
+              <tr>
+                <th>DSS Name</th>
+                <th style="background:#1a6fb3;">Env1 Value</th>
+                <th style="background:#2d8cf0;">Env2 Value</th>
+                <th>Updated Date (Env1)</th>
+                <th>Updated Date (Env2)</th>
+                <th>Operator (Env1)</th>
+                <th>Operator (Env2)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in result_table %}
+                <tr>
+                  <td>{{ row.name }}</td>
+                  <td class="env1">{{ row.env1_value }}</td>
+                  <td class="env2">{{ row.env2_value }}</td>
+                  <td>{{ row.env1_updated }}</td>
+                  <td>{{ row.env2_updated }}</td>
+                  <td>{{ row.env1_operator }}</td>
+                  <td>{{ row.env2_operator }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No comparison data yet.</p>
+        {% endif %}
+      </div>
     </div>
-  </div>
-  <div class="output-table-section">
-    {% if result_table %}
-      <table>
-        <thead>
-          <tr>
-            <th>DSS Name</th>
-            <th style="background:#1a6fb3;">Env1 Value</th>
-            <th style="background:#2d8cf0;">Env2 Value</th>
-            <th>Updated Date (Env1)</th>
-            <th>Updated Date (Env2)</th>
-            <th>Operator (Env1)</th>
-            <th>Operator (Env2)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in result_table %}
-            <tr>
-              <td>{{ row.name }}</td>
-              <td class="env1">{{ row.env1_value }}</td>
-              <td class="env2">{{ row.env2_value }}</td>
-              <td>{{ row.env1_updated }}</td>
-              <td>{{ row.env2_updated }}</td>
-              <td>{{ row.env1_operator }}</td>
-              <td>{{ row.env2_operator }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>No comparison data yet.</p>
-    {% endif %}
   </div>
   <div class="footer">&copy; {{ year if year else '2025' }} ProcessInfo. All rights reserved.</div>
   <script>
@@ -445,3 +458,4 @@
     });
   </script>
 </body>
+</html>
