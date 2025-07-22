@@ -1,47 +1,67 @@
-
 <!doctype html>
 <html>
 <head>
   <title>Compare Environments</title>
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
-      margin: 0;
+      min-height: 100vh;
       background: linear-gradient(135deg, #232526 0%, #414345 100%);
       color: #f3f3f3;
+      margin: 0;
+      padding: 0;
+    }
+    .header-bar {
+      background: linear-gradient(90deg,#232526 0%,#2d8cf0 100%);
+      color: #eee;
+      padding: 1.2rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 12px rgba(45,140,240,0.12);
     }
     .wrapper {
       display: flex;
-      min-height: 70vh;
+      flex-direction: row;
       gap: 2.5rem;
-      justify-content: center;
+      justify-content: stretch;
       align-items: stretch;
       width: 100%;
-      max-width: 1600px;
-      margin: 0 auto;
+      height: calc(100vh - 90px);
+      padding: 2rem 2rem 0 2rem;
+      box-sizing: border-box;
     }
     .form-section, .result-section {
-      padding: 2.5rem 2.5rem;
       flex: 1 1 0;
       background: rgba(34, 34, 34, 0.97);
       border-radius: 18px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-      margin-top: 2.5rem;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      min-width: 400px;
-      min-height: 500px;
+      align-items: stretch;
+      min-width: 0;
+      padding: 2.5rem 2.5rem;
+      margin: 0;
+      height: 100%;
     }
     .form-section {
       border-right: 2px solid #2d8cf0;
       max-width: 420px;
+      min-width: 340px;
       align-items: center;
     }
     .result-section {
       margin-left: 0;
       align-items: center;
       justify-content: flex-start;
+      overflow-x: auto;
     }
     h2 {
       color: #2d8cf0;
@@ -55,7 +75,7 @@
       margin-bottom: 0.5rem;
       display: block;
     }
-    select, button {
+    select, button, input[list] {
       padding: 10px;
       margin-bottom: 18px;
       border-radius: 8px;
@@ -65,8 +85,9 @@
       background: #181818;
       color: #f3f3f3;
       transition: border 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
     }
-    select:focus, button:focus {
+    select:focus, button:focus, input[list]:focus {
       outline: none;
       border-color: #fa5;
       box-shadow: 0 0 0 2px #fa5;
@@ -81,6 +102,8 @@
       font-weight: 600;
       box-shadow: 0 2px 8px rgba(45,140,240,0.15);
       transition: background 0.2s, box-shadow 0.2s;
+      width: 100%;
+      margin-bottom: 0;
     }
     .btn:hover {
       background: linear-gradient(90deg, #1a6fb3 0%, #2d8cf0 100%);
@@ -135,6 +158,10 @@
       box-shadow: 0 2px 12px rgba(45,140,240,0.08);
       padding: 1.5rem;
       margin-bottom: 24px;
+      width: 100%;
+      max-width: 1000px;
+      margin-left: auto;
+      margin-right: auto;
     }
     .info-label {
       color: #fa5;
@@ -149,14 +176,15 @@
       margin: 0.5rem 0;
       display: inline-block;
     }
-    @media (max-width: 900px) {
-      .wrapper { flex-direction: column; gap: 0; }
-      .form-section, .result-section { margin-top: 1rem; }
+    @media (max-width: 1200px) {
+      .wrapper { flex-direction: column; gap: 0; height: auto; }
+      .form-section, .result-section { margin-top: 1rem; min-width: 0; }
+      .card, table { max-width: 100%; }
     }
   </style>
 </head>
 <body>
-  <div style="background:linear-gradient(90deg,#232526 0%,#2d8cf0 100%); color:#eee; padding:1.2rem 2rem; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 12px rgba(45,140,240,0.12);">
+  <div class="header-bar">
     <h2 style="margin:0; font-size:2rem; letter-spacing:1px;">🔎 Compare Environments</h2>
     <div style="position:relative;">
       <button id="userButton" onclick="toggleDropdown()" style="background:linear-gradient(90deg,#2d8cf0 0%,#1a6fb3 100%); border:none; color:#fff; font-weight:bold; cursor:pointer; border-radius:8px; padding:8px 18px; font-size:1em; box-shadow:0 2px 8px rgba(45,140,240,0.15);">
@@ -176,14 +204,14 @@
       {% endif %}
       <form method="post" id="compareForm">
         <label for="env1">Environment 1:</label>
-        <input list="env1-list" name="env1" id="env1" value="{{ env1 or '' }}" required autocomplete="off" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2d8cf0; background:#181818; color:#f3f3f3;">
+        <input list="env1-list" name="env1" id="env1" value="{{ env1 or '' }}" required autocomplete="off">
         <datalist id="env1-list">
           {% for env in config.keys() %}
             <option value="{{ env }}"></option>
           {% endfor %}
         </datalist>
         <label for="env2">Environment 2:</label>
-        <input list="env2-list" name="env2" id="env2" value="{{ env2 or '' }}" required autocomplete="off" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2d8cf0; background:#181818; color:#f3f3f3;">
+        <input list="env2-list" name="env2" id="env2" value="{{ env2 or '' }}" required autocomplete="off" style="margin-bottom:18px;">
         <datalist id="env2-list">
           {% for env in config.keys() %}
             <option value="{{ env }}"></option>
@@ -198,7 +226,7 @@
       </form>
       <div style="margin-top:1.5rem;">
         <label for="history" style="margin-top:1rem;">History:</label>
-        <select id="history" style="width:100%; padding:10px; border-radius:8px; border:1.5px solid #2d8cf0; background:#181818; color:#fa5; font-size:1em; margin-top:0.5rem;">
+        <select id="history">
           <option value="">Select previous comparison</option>
           {% if history %}
             {% for item in history %}
@@ -211,7 +239,7 @@
     <div class="result-section">
       <h2 style="text-align:center; margin-bottom:2rem;">Comparison Result</h2>
       {% if env1 and env2 %}
-        <div class="card" style="max-width:900px; margin:0 auto;">
+        <div class="card">
           <span class="info-label">Comparison selected between </span>
           <span style="color:#0af; font-weight:bold;">{{ env1 }}</span>
           <span class="info-label"> and </span>
@@ -225,7 +253,7 @@
       {% endif %}
       {% if result_table %}
         <div style="width:100%; display:flex; justify-content:center;">
-        <table style="max-width:900px; width:100%; margin:0 auto;">
+        <table>
           <thead>
             <tr>
               <th>DSS Name</th>
