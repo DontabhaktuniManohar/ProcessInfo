@@ -1,3 +1,27 @@
+
+for (FeatureResult feature : featureResults) {
+    String featurePath = feature.getFeature().getResource().getPath();
+    String absolutePath = new java.io.File(featurePath).getAbsolutePath();
+
+    for (ScenarioResult scenario : feature.getScenarioResults()) {
+        if (scenario.isFailed()) {
+            totalFailures++;
+            String name = scenario.getScenario().getName();
+            int line = scenario.getScenario().getLine();
+
+            // Construct scenario link with line number as anchor
+            String scenarioLink = "file://" + absolutePath + "#L" + line;
+
+            html.append("<tr>")
+                .append("<td><a href='").append(scenarioLink).append("' target='_blank'>")
+                .append(name).append("</a></td>")
+                .append("<td>").append(featurePath).append("</td>")
+                .append("<td>").append(line).append("</td>")
+                .append("</tr>");
+        }
+    }
+}
+
 package ReqRes;
 
 import com.intuit.karate.Results;
