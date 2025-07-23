@@ -1,5 +1,28 @@
 
 for (FeatureResult feature : featureResults) {
+    String featureFileName = new java.io.File(feature.getFeature().getResource().getPath()).getName();
+
+    for (ScenarioResult scenario : feature.getScenarioResults()) {
+        if (scenario.isFailed()) {
+            totalFailures++;
+            String name = scenario.getScenario().getName();
+            int line = scenario.getScenario().getLine();
+
+            String scenarioLink = "file://" + System.getProperty("user.dir")
+                                 + "/target/karate-reports/" + featureFileName
+                                 + "#L" + line;
+
+            html.append("<tr>")
+                .append("<td><a href='").append(scenarioLink).append("' target='_blank'>")
+                .append(name).append("</a></td>")
+                .append("<td>").append(featureFileName).append("</td>")
+                .append("<td>").append(line).append("</td>")
+                .append("</tr>");
+        }
+    }
+}
+
+for (FeatureResult feature : featureResults) {
     String featurePath = feature.getFeature().getResource().getPath();
     String absolutePath = new java.io.File(featurePath).getAbsolutePath();
 
