@@ -1,5 +1,32 @@
 package ReqRes;
 
+import com.intuit.karate.Results;
+import com.intuit.karate.Runner;
+import com.intuit.karate.core.FeatureResult;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class KarateParallelTest {
+
+    public static void main(String[] args) {
+        Results results = Runner.path("classpath:ReqRes").parallel(5);
+
+        List<FeatureResult> featureResults = results.getFeatureResults().collect(Collectors.toList());
+
+        // Call the external report generator
+        int totalFailures = FailedScenarioReporter.generate(featureResults);
+
+        if (totalFailures > 0) {
+            System.exit(1);
+        }
+    }
+}
+
+
+
+package ReqRes;
+
 import com.intuit.karate.core.FeatureResult;
 import com.intuit.karate.core.ScenarioResult;
 
