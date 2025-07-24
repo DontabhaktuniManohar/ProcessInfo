@@ -267,29 +267,29 @@ def dummy_dss():
         "Total DSS Count": 5,
         "DSS List": [
             {
-                "Owning Ruleset": "Pega-RULES",
-                "Name of DSS": "EnableOneClickUpgradeforChatbot",
+                "Owning Ruleset": "EnableOneClickUpgradeforChatbot/Pega-RULES",
+                "Name of DSS": "EnableOneClickUpgradeforChatbot/EnableOneClickUpgradeforChatbot",
                 "Value": "true",
                 "Updated Date Time": "20250724T093500.000 GMT",
                 "Updated Operator": "admin"
             },
             {
-                "Owning Ruleset": "Pega-SearchEngine",
-                "Name of DSS": "aessetting/RuleUpdatesChange",
-                "Value": "https://pdcan1.pegacloud.com/prweb/PRRestService/_BunIF",
+                "Owning Ruleset": "EnableOneClickUpgradeforChatbot/Pega-SearchEngine",
+                "Name of DSS": "aessetting/RuleUpdatesChangeEnableOneClickUpgradeforChatbot",
+                "Value": "https://pdcan1.pegacloudpegacloudpegacloud.com/prweb/PRRestService/_BunIF",
                 "Updated Date Time": "20250724T093600.000 GMT",
                 "Updated Operator": "system"
             },
             {
-                "Owning Ruleset": "Pega-RULES",
-                "Name of DSS": "VzUp_EnableADM",
+                "Owning Ruleset": "EnableOneClickUpgradeforChatbot/Pega-RULES",
+                "Name of DSS": "VzUp_EnableADM/VzUp_EnableADMVzUp_EnableADM",
                 "Value": "True",
                 "Updated Date Time": "20250724T093700.000 GMT",
                 "Updated Operator": "admin"
             },
             {
                 "Owning Ruleset": "Pega-SearchEngine",
-                "Name of DSS": "aessetting/ChannelLastSnapshotTime",
+                "Name of DSS": "aessetting/VzUp_EnableADMChannelLastSnapshotTime",
                 "Value": "19700101T000000.000 GMT",
                 "Updated Date Time": "20250724T093800.000 GMT",
                 "Updated Operator": "system"
