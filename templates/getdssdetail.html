@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate DSS Details Report</title>
+    <style>
+        body {
+            background: #181f2a;
+            color: #e0e6ed;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: #232b3a;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px #0006;
+            padding: 32px;
+        }
+        h2 {
+            color: #fff;
+            margin-bottom: 24px;
+        }
+        label {
+            display: block;
+            margin: 12px 0 6px 0;
+            color: #e0e6ed;
+        }
+        select, input[type="number"], input[type="text"] {
+            background: #181f2a;
+            color: #e0e6ed;
+            border: 1px solid #3a4663;
+            border-radius: 6px;
+            padding: 8px;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+        button {
+            background: #2d7ff9;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:hover {
+            background: #1a5dcc;
+        }
+        .status {
+            margin: 18px 0;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .datagrid-title {
+            color: #ffd700;
+            font-size: 18px;
+            margin: 24px 0 12px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #232b3a;
+            margin-bottom: 24px;
+        }
+        th, td {
+            padding: 10px 8px;
+            text-align: left;
+        }
+        th {
+            background: #1a2233;
+            color: #ffd700;
+        }
+        tr:nth-child(even) {
+            background: #20283a;
+        }
+        .env-dev { color: #2d7ff9; font-weight: bold; }
+        .env-test { color: #00c9a7; font-weight: bold; }
+        .env-staging { color: #ffb700; font-weight: bold; }
+        .env-prod { color: #ff4c4c; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Generate DSS Details Report</h2>
+        <form method="POST">
+            <label for="environment">Environments</label>
+            <select name="environment" id="environment" required>
+                {% for env in config.keys() %}
+                    <option value="{{ env }}" {% if env == selected_env %}selected{% endif %}>{{ env }}</option>
+                {% endfor %}
+            </select>
+            <label for="noofdays">No. of Days</label>
+            <input type="number" name="noofdays" id="noofdays" value="{{ noofday }}" min="1" required>
+            <label for="customHeader">Custom Header (optional)</label>
+            <input type="text" name="customHeader" id="customHeader" value="{{ custom_header or '' }}">
+            <button type="submit">Generate Report</button>
+        </form>
+        {% if response_message %}
+            <div class="status">{{ response_message }}</div>
+        {% endif %}
+        {% if dss_data %}
+            <div class="datagrid-title">Data Grid Title</div>
+            <table>
+                <tr>
+                    {% for key in dss_data[0].keys() %}
+                        <th>{{ key }}</th>
+                    {% endfor %}
+                </tr>
+                {% for row in dss_data %}
+                    <tr>
+                        {% for key, val in row.items() %}
+                            {% if key|lower == 'environment' %}
+                                <td class="env-{{ val|lower }}">{{ val }}</td>
+                            {% else %}
+                                <td>{{ val }}</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    </div>
+</body>
+</html>

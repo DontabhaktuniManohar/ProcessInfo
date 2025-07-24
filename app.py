@@ -212,6 +212,55 @@ def compare_env():
         response_message=response_message,
         year=2025
     )
+@app.route('/getdssdetail', methods=['GET', 'POST'])
+@login_required
+def get_dss_detail():
+    config = load_config()
+    environment = request.form.get('environment') if request.method == 'POST' else None
+    noofday = request.form.get('noofdays') if request.method == 'POST' else 1
+    custom_header = request.form.get('customHeader') if request.method == 'POST' else None
+
+    user = session.get('user')
+    password = session.get('password')
+    dss_data = []
+    response_status = None
+    response_message = None
+
+    if request.method == 'POST' and environment:
+        try:
+            url = config.get(environment)
+            if not url:
+                raise ValueError("Invalid environment selected.")
+
+            url = url.rstrip('/') + '/V1/getDssDetails'
+            headers = {'noofday': str(noofday)}
+            if custom_header:
+                headers['customHeader'] = custom_header
+            payload = {}
+
+            response = requests.post(url, json=payload, auth=(user, password), headers=headers, timeout=15)
+            response_status = response.status_code
+            if response.status_code == 200:
+                dss_data = response.json()
+                response_message = "Success"
+            else:
+                response_message = f"Failed: {response.text}"
+        except Exception as e:
+            response_message = f"Exception: {str(e)}"
+            response_status = 500
+
+    return render_template(
+        'getdssdetail.html',
+        config=config,
+        selected_env=environment,
+        noofday=noofday,
+        custom_header=custom_header,
+        dss_data=dss_data,
+        response_status=response_status,
+        response_message=response_message,
+        year=datetime.now().year
+    )
+
 @app.route('/logs')
 def view_logs():
     logs = []
