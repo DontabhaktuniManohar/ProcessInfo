@@ -2,5 +2,5 @@
   "Dev": "https://dev-pega.example.com/prweb/api/v1/dss/update",
   "QA": "https://qa-pega.example.com/prweb/api/v1/dss/update",
   "Prod": "https://prod-pega.example.com/prweb/api/v1/dss/update",
-  "mock": "https://httpbin.org/post"
+  "mock": "http://127.0.0.1:5000/"
 }

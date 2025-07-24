@@ -232,7 +232,7 @@ def get_dss_detail():
             if not url:
                 raise ValueError("Invalid environment selected.")
 
-            url = url.rstrip('/') + '/V1/getDssDetails'
+            url = url.rstrip('/') + '/dummy-dss'
             headers = {'noofday': str(noofday)}
             if custom_header:
                 headers['customHeader'] = custom_header
@@ -260,7 +260,49 @@ def get_dss_detail():
         response_message=response_message,
         year=datetime.now().year
     )
-
+@app.route('/dummy-dss', methods=['GET','POST'])
+def dummy_dss():
+    mock_response = {
+        "Total DSS Count": 5,
+        "DSS List": [
+            {
+                "Owning Ruleset": "Pega-RULES",
+                "Name of DSS": "EnableOneClickUpgradeforChatbot",
+                "Value": "true",
+                "Updated Date Time": "20250724T093500.000 GMT",
+                "Updated Operator": "admin"
+            },
+            {
+                "Owning Ruleset": "Pega-SearchEngine",
+                "Name of DSS": "aessetting/RuleUpdatesChange",
+                "Value": "https://pdcan1.pegacloud.com/prweb/PRRestService/_BunIF",
+                "Updated Date Time": "20250724T093600.000 GMT",
+                "Updated Operator": "system"
+            },
+            {
+                "Owning Ruleset": "Pega-RULES",
+                "Name of DSS": "VzUp_EnableADM",
+                "Value": "True",
+                "Updated Date Time": "20250724T093700.000 GMT",
+                "Updated Operator": "admin"
+            },
+            {
+                "Owning Ruleset": "Pega-SearchEngine",
+                "Name of DSS": "aessetting/ChannelLastSnapshotTime",
+                "Value": "19700101T000000.000 GMT",
+                "Updated Date Time": "20250724T093800.000 GMT",
+                "Updated Operator": "system"
+            },
+            {
+                "Owning Ruleset": "Pega-RULES",
+                "Name of DSS": "Notifications_GetCases_Switch",
+                "Value": "true",
+                "Updated Date Time": "20250724T093900.000 GMT",
+                "Updated Operator": "admin"
+            }
+        ]
+    }
+    return jsonify(mock_response)
 @app.route('/logs')
 def view_logs():
     logs = []

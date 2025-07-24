@@ -89,19 +89,19 @@
         .table-wrapper {
             width: 100%;
             margin-top: 32px;
-            /* Remove overflow-x: auto; */
+            /* Remove overflow-x: auto; and any height/max-height */
         }
         table {
             width: 100%;
             border-collapse: collapse;
             background: #232b3a;
             font-size: 15px;
-            table-layout: auto; /* Let columns auto-size */
+            table-layout: auto;
         }
         th, td {
             padding: 10px 8px;
             text-align: left;
-            word-break: break-all; /* Prevent overflow */
+            word-break: break-all;
         }
         th {
             background: #1a2233;
@@ -156,26 +156,24 @@
         {% endif %}
         {% if dss_data %}
             <div class="datagrid-title">Dynamic System Settings</div>
-            <div class="table-wrapper">
-                <table>
+            <table>
+                <tr>
+                    <th>Owning Ruleset* <span class="filter-icon">&#x25BC;</span></th>
+                    <th>Setting Purpose* <span class="filter-icon">&#x25BC;</span></th>
+                    <th>Value</th>
+                    <th>Updated Date Time</th>
+                    <th>Updated Operator</th>
+                </tr>
+                {% for row in dss_data %}
                     <tr>
-                        <th>Owning Ruleset* <span class="filter-icon">&#x25BC;</span></th>
-                        <th>Setting Purpose* <span class="filter-icon">&#x25BC;</span></th>
-                        <th>Value</th>
-                        <th>Updated Date Time</th>
-                        <th>Updated Operator</th>
+                        <td>{{ row.get('Owning Ruleset', '') }}</td>
+                        <td>{{ row.get('Name of DSS', '') }}</td>
+                        <td>{{ row.get('Value', '') }}</td>
+                        <td>{{ row.get('Updated Date Time', '') }}</td>
+                        <td>{{ row.get('Updated Operator', '') }}</td>
                     </tr>
-                    {% for row in dss_data %}
-                        <tr>
-                            <td>{{ row.get('Owning Ruleset', '') }}</td>
-                            <td>{{ row.get('Name of DSS', '') }}</td>
-                            <td>{{ row.get('Value', '') }}</td>
-                            <td>{{ row.get('Updated Date Time', '') }}</td>
-                            <td>{{ row.get('Updated Operator', '') }}</td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            </div>
+                {% endfor %}
+            </table>
         {% endif %}
     </div>
 </body>
