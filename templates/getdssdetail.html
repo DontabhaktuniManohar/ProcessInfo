@@ -88,18 +88,20 @@
         }
         .table-wrapper {
             width: 100%;
-            overflow-x: auto;
             margin-top: 32px;
+            /* Remove overflow-x: auto; */
         }
         table {
             width: 100%;
             border-collapse: collapse;
             background: #232b3a;
             font-size: 15px;
+            table-layout: auto; /* Let columns auto-size */
         }
         th, td {
             padding: 10px 8px;
             text-align: left;
+            word-break: break-all; /* Prevent overflow */
         }
         th {
             background: #1a2233;
