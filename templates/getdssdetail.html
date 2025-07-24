@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Generate DSS Details Report</title>
+    <title>Dynamic System Settings</title>
     <style>
         body {
             background: #181f2a;
@@ -11,21 +11,36 @@
             padding: 0;
         }
         .container {
-            max-width: 700px;
+            max-width: 900px;
             margin: 40px auto;
             background: #232b3a;
-            border-radius: 12px;
+            border-radius: 8px;
             box-shadow: 0 2px 12px #0006;
             padding: 32px;
+        }
+        .user-bar {
+            font-size: 16px;
+            color: #ffd700;
+            margin-bottom: 18px;
+            text-align: right;
         }
         h2 {
             color: #fff;
             margin-bottom: 24px;
         }
+        .form-row {
+            display: flex;
+            gap: 18px;
+            align-items: flex-end;
+            margin-bottom: 24px;
+        }
+        .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
         label {
-            display: block;
-            margin: 12px 0 6px 0;
-            color: #e0e6ed;
+            margin-bottom: 6px;
         }
         select, input[type="number"], input[type="text"] {
             background: #181f2a;
@@ -34,7 +49,6 @@
             border-radius: 6px;
             padding: 8px;
             width: 100%;
-            margin-bottom: 16px;
         }
         button {
             background: #2d7ff9;
@@ -44,7 +58,8 @@
             padding: 10px 24px;
             font-size: 16px;
             cursor: pointer;
-            margin-top: 8px;
+            margin-top: 0;
+            height: 40px;
         }
         button:hover {
             background: #1a5dcc;
@@ -64,6 +79,7 @@
             border-collapse: collapse;
             background: #232b3a;
             margin-bottom: 24px;
+            font-size: 15px;
         }
         th, td {
             padding: 10px 8px;
@@ -72,52 +88,71 @@
         th {
             background: #1a2233;
             color: #ffd700;
+            border-bottom: 2px solid #3a4663;
         }
         tr:nth-child(even) {
             background: #20283a;
         }
-        .env-dev { color: #2d7ff9; font-weight: bold; }
-        .env-test { color: #00c9a7; font-weight: bold; }
-        .env-staging { color: #ffb700; font-weight: bold; }
-        .env-prod { color: #ff4c4c; font-weight: bold; }
+        tr:hover {
+            background: #2d364a;
+        }
+        .filter-icon {
+            font-size: 12px;
+            margin-left: 4px;
+            color: #ffd700;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Generate DSS Details Report</h2>
+        <div class="user-bar">
+            User: {{ session['user'] if session['user'] else 'Unknown' }}
+        </div>
+        <h2>Instances <span style="font-weight:normal;">of</span> Dynamic System Settings</h2>
         <form method="POST">
-            <label for="environment">Environments</label>
-            <select name="environment" id="environment" required>
-                {% for env in config.keys() %}
-                    <option value="{{ env }}" {% if env == selected_env %}selected{% endif %}>{{ env }}</option>
-                {% endfor %}
-            </select>
-            <label for="noofdays">No. of Days</label>
-            <input type="number" name="noofdays" id="noofdays" value="{{ noofday }}" min="1" required>
-            <label for="customHeader">Custom Header (optional)</label>
-            <input type="text" name="customHeader" id="customHeader" value="{{ custom_header or '' }}">
-            <button type="submit">Generate Report</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="environment">Environments</label>
+                    <select name="environment" id="environment" required>
+                        {% for env in config.keys() %}
+                            <option value="{{ env }}" {% if env == selected_env %}selected{% endif %}>{{ env }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="noofdays">No. of Days</label>
+                    <input type="number" name="noofdays" id="noofdays" value="{{ noofday }}" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="customHeader">Custom Header (optional)</label>
+                    <input type="text" name="customHeader" id="customHeader" value="{{ custom_header or '' }}">
+                </div>
+                <div class="form-group" style="flex:0;">
+                    <button type="submit">Generate Report</button>
+                </div>
+            </div>
         </form>
         {% if response_message %}
             <div class="status">{{ response_message }}</div>
         {% endif %}
         {% if dss_data %}
-            <div class="datagrid-title">Data Grid Title</div>
+            <div class="datagrid-title">Dynamic System Settings</div>
             <table>
                 <tr>
-                    {% for key in dss_data[0].keys() %}
-                        <th>{{ key }}</th>
-                    {% endfor %}
+                    <th>Owning Ruleset* <span class="filter-icon">&#x25BC;</span></th>
+                    <th>Setting Purpose* <span class="filter-icon">&#x25BC;</span></th>
+                    <th>Value</th>
+                    <th>Updated Date Time</th>
+                    <th>Updated Operator</th>
                 </tr>
                 {% for row in dss_data %}
                     <tr>
-                        {% for key, val in row.items() %}
-                            {% if key|lower == 'environment' %}
-                                <td class="env-{{ val|lower }}">{{ val }}</td>
-                            {% else %}
-                                <td>{{ val }}</td>
-                            {% endif %}
-                        {% endfor %}
+                        <td>{{ row.get('Owning Ruleset', '') }}</td>
+                        <td>{{ row.get('Name of DSS', '') }}</td>
+                        <td>{{ row.get('Value', '') }}</td>
+                        <td>{{ row.get('Updated Date Time', '') }}</td>
+                        <td>{{ row.get('Updated Operator', '') }}</td>
                     </tr>
                 {% endfor %}
             </table>
