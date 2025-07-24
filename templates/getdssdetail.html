@@ -107,19 +107,24 @@
             padding: 10px 8px;
             text-align: left;
             vertical-align: top;
-            word-break: break-word; /* Allow wrapping for long text */
+            word-break: break-word;
         }
         th {
             background: #1a2233;
             color: #ffd700;
             border-bottom: 2px solid #3a4663;
-            min-width: 140px; /* Reasonable minimum for headers */
+            min-width: 140px;
         }
         td {
-            min-width: 140px; /* Reasonable minimum for data */
+            min-width: 140px;
         }
-        td:nth-child(3), td:nth-child(4), td:nth-child(5) {
-            white-space: nowrap; /* Prevent wrapping for Value, Date, Operator */
+        td:nth-child(4),
+        td:nth-child(5) {
+            white-space: nowrap; /* Prevent wrapping for Date, Operator */
+        }
+        td:nth-child(3) {
+            white-space: normal; /* Allow wrapping for Value column */
+            word-break: break-word;
         }
         tr:nth-child(even) {
             background: #20283a;
