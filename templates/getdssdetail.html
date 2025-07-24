@@ -31,7 +31,7 @@
         .form-row {
             display: flex;
             gap: 18px;
-            align-items: flex-end; /* <-- Change from center to flex-end */
+            align-items: flex-end;
             margin-bottom: 24px;
         }
         .form-group {
@@ -43,11 +43,11 @@
         .form-group.button-group {
             flex: 0 0 160px;
             display: flex;
-            align-items: flex-end; /* <-- Change from center to flex-end */
+            align-items: flex-end;
             justify-content: flex-end;
             height: 100%;
             margin-top: 0;
-            flex-direction: row; /* Ensure horizontal alignment */
+            flex-direction: row;
         }
         label {
             margin-bottom: 6px;
@@ -71,7 +71,7 @@
             min-width: 140px;
             height: 40px;
             margin: 0;
-            align-self: flex-end; /* <-- Change from center to flex-end */
+            align-self: flex-end;
         }
         button:hover {
             background: #1a5dcc;
@@ -85,13 +85,6 @@
             color: #ffd700;
             font-size: 18px;
             margin: 24px 0 12px 0;
-            background: none; /* Remove background */
-            padding: 0;       /* Remove padding */
-        }
-        .table-wrapper {
-            width: 100%;
-            margin-top: 32px;
-            /* Remove overflow-x: auto; and any height/max-height */
         }
         table {
             width: 100%;
@@ -100,32 +93,22 @@
             font-size: 15px;
             table-layout: auto;
             margin: 0;
-            box-shadow: none;
-            border: none;
+            border: 1px solid #3a4663;
         }
         th, td {
-            padding: 10px 8px;
+            padding: 12px 10px;
             text-align: left;
             vertical-align: top;
             word-break: break-word;
+            white-space: pre-wrap;
+            border: 1px solid #3a4663;
         }
         th {
             background: #1a2233;
             color: #ffd700;
-            border-bottom: 2px solid #3a4663;
-            min-width: 140px;
-        }
-        td {
-            min-width: 140px;
-        }
-        td:nth-child(3) {
-            white-space: normal;         /* Allow wrapping */
-            word-break: break-word;      /* Break long words */
-            max-width: 350px;            /* Limit width so wrapping occurs */
-        }
-        td:nth-child(4),
-        td:nth-child(5) {
-            white-space: nowrap;         /* Prevent wrapping for Date, Operator */
+            position: sticky;
+            top: 0;
+            z-index: 2;
         }
         tr:nth-child(even) {
             background: #20283a;
@@ -138,6 +121,18 @@
             margin-left: 4px;
             color: #ffd700;
             vertical-align: middle;
+        }
+        .collapsible {
+            max-height: 3.6em;
+            overflow: hidden;
+            position: relative;
+        }
+        .expand-btn {
+            color: #28a7ff;
+            cursor: pointer;
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 13px;
         }
     </style>
 </head>
@@ -170,9 +165,11 @@
                 </div>
             </div>
         </form>
+
         {% if response_message %}
             <div class="status">{{ response_message }}</div>
         {% endif %}
+
         {% if dss_data %}
             <div class="datagrid-title">Dynamic System Settings</div>
             <table>
@@ -187,7 +184,17 @@
                     <tr>
                         <td>{{ row.get('Owning Ruleset', '') }}</td>
                         <td>{{ row.get('Name of DSS', '') }}</td>
-                        <td>{{ row.get('Value', '') }}</td>
+                        <td>
+                            {% set value = row.get('Value', '') %}
+                            {% if value|length > 100 %}
+                                <div class="collapsible" id="collapsible-{{ loop.index }}">
+                                    {{ value[:100] }}...
+                                </div>
+                                <span class="expand-btn" onclick="toggleExpand({{ loop.index }}, {{ value|tojson }})">Show more</span>
+                            {% else %}
+                                {{ value }}
+                            {% endif %}
+                        </td>
                         <td>{{ row.get('Updated Date Time', '') }}</td>
                         <td>{{ row.get('Updated Operator', '') }}</td>
                     </tr>
@@ -195,5 +202,19 @@
             </table>
         {% endif %}
     </div>
+
+    <script>
+        function toggleExpand(index, fullValue) {
+            const div = document.getElementById('collapsible-' + index);
+            const btn = event.target;
+            if (btn.innerText === 'Show more') {
+                div.innerText = fullValue;
+                btn.innerText = 'Show less';
+            } else {
+                div.innerText = fullValue.substring(0, 100) + '...';
+                btn.innerText = 'Show more';
+            }
+        }
+    </script>
 </body>
 </html>
