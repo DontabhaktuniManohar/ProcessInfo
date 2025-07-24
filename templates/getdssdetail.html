@@ -105,12 +105,20 @@
         th, td {
             padding: 10px 8px;
             text-align: left;
-            word-break: break-all;
+            /* Remove word-break: break-all; */
         }
         th {
             background: #1a2233;
             color: #ffd700;
             border-bottom: 2px solid #3a4663;
+            min-width: 140px; /* Add min-width for better column sizing */
+        }
+        td {
+            min-width: 140px; /* Add min-width for better column sizing */
+            vertical-align: top;
+        }
+        td:nth-child(3), td:nth-child(4), td:nth-child(5) {
+            white-space: nowrap; /* Prevent wrapping for Value, Date, Operator */
         }
         tr:nth-child(even) {
             background: #20283a;
