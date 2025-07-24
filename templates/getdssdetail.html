@@ -96,12 +96,12 @@
             border: 1px solid #3a4663;
         }
         th, td {
-            padding: 12px 10px;
-            text-align: left;
-            vertical-align: top;
-            word-break: break-word;
-            white-space: pre-wrap;
+            padding: 6px 8px;
+            line-height: 1.4;
+            vertical-align: middle;
             border: 1px solid #3a4663;
+            word-break: break-word;
+            white-space: normal;
         }
         th {
             background: #1a2233;
@@ -123,16 +123,18 @@
             vertical-align: middle;
         }
         .collapsible {
-            max-height: 3.6em;
+            max-height: 2.5em;
             overflow: hidden;
-            position: relative;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
+
         .expand-btn {
+            font-size: 12px;
             color: #28a7ff;
             cursor: pointer;
             display: inline-block;
-            margin-top: 4px;
-            font-size: 13px;
+            margin-top: 2px;
         }
     </style>
 </head>
