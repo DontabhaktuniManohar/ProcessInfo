@@ -241,7 +241,8 @@ def get_dss_detail():
             response = requests.post(url, json=payload, auth=(user, password), headers=headers, timeout=15)
             response_status = response.status_code
             if response.status_code == 200:
-                dss_data = response.json()
+                
+                dss_data = response.json().get("DSS List", [])
                 response_message = "Success"
             else:
                 response_message = f"Failed: {response.text}"
