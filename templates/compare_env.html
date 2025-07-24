@@ -11,88 +11,80 @@
       padding: 0;
     }
     .container {
-      max-width: 100vw;
-      margin: 40px auto;
+      width: 95vw;
+      max-width: 1400px;
+      margin: 24px auto;
       background: #232b3a;
-      border-radius: 8px;
-      box-shadow: 0 2px 12px #0006;
-      padding: 32px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px #0009;
+      padding: 24px;
     }
     .user-bar {
-      font-size: 16px;
+      font-size: 15px;
       color: #ffd700;
-      margin-bottom: 18px;
       text-align: right;
+      margin-bottom: 16px;
     }
     h2 {
       color: #fff;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .form-row {
       display: flex;
-      gap: 18px;
+      gap: 14px;
       align-items: flex-end;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
     .form-group {
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
     }
     .form-group.button-group {
-      flex: 0 0 160px;
+      flex: 0 0 140px;
       display: flex;
       align-items: flex-end;
       justify-content: flex-end;
-      height: 100%;
-      margin-top: 0;
-      flex-direction: row;
     }
     label {
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
-    select, input[type="number"], input[type="text"] {
+    select, input[type="number"] {
       background: #181f2a;
       color: #e0e6ed;
       border: 1px solid #3a4663;
-      border-radius: 6px;
-      padding: 8px;
-      width: 100%;
+      border-radius: 4px;
+      padding: 6px 8px;
     }
     button {
       background: #2d7ff9;
-      color: #fff;
+      color: white;
       border: none;
-      border-radius: 6px;
-      padding: 10px 24px;
-      font-size: 16px;
+      border-radius: 5px;
+      padding: 8px 16px;
+      font-size: 14px;
       cursor: pointer;
-      min-width: 140px;
-      height: 40px;
-      margin: 0;
-      align-self: flex-end;
     }
     button:hover {
       background: #1a5dcc;
     }
     .status {
-      margin: 18px 0;
+      margin: 16px 0;
       font-weight: bold;
       color: #ffd700;
     }
     .datagrid-title {
       color: #ffd700;
-      font-size: 18px;
-      margin: 24px 0 12px 0;
+      font-size: 17px;
+      margin: 20px 0 10px 0;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       background: #232b3a;
-      font-size: 15px;
+      font-size: 14px;
       table-layout: auto;
-      margin: 0;
       border: 1px solid #3a4663;
     }
     th {
@@ -101,6 +93,7 @@
       position: sticky;
       top: 0;
       z-index: 2;
+      padding: 6px;
     }
     tr:nth-child(even) {
       background: #20283a;
@@ -108,27 +101,20 @@
     tr:hover {
       background: #2d364a;
     }
-    .filter-icon {
-      font-size: 12px;
-      margin-left: 4px;
-      color: #ffd700;
-      vertical-align: middle;
-    }
     th, td {
       padding: 4px 6px;
       line-height: 1.3;
-      vertical-align: middle;
+      vertical-align: top;
       word-break: break-word;
-      white-space: normal;
       border: 1px solid #3a4663;
     }
     .collapsible {
       display: inline-block;
-      max-height: 1.6em;
+      max-height: 1.3em;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      vertical-align: middle;
+      line-height: 1.3;
     }
     .expanded {
       max-height: none !important;
@@ -139,19 +125,21 @@
       margin-left: 6px;
       color: #28a7ff;
       cursor: pointer;
-      display: inline;
-      vertical-align: middle;
-    }
-    tr {
-      height: auto !important;
     }
     .footer {
-      margin-top: 2.5rem;
+      margin-top: 2rem;
       text-align: center;
       color: #aaa;
-      font-size: 1em;
-      padding: 1.2em 0 0.5em 0;
-      letter-spacing: 1px;
+      font-size: 14px;
+      padding: 1rem 0 0.5rem 0;
+    }
+    @media (max-width: 768px) {
+      .form-row {
+        flex-direction: column;
+      }
+      .form-group.button-group {
+        justify-content: flex-start;
+      }
     }
   </style>
 </head>
@@ -188,10 +176,13 @@
         </div>
       </div>
     </form>
+
     {% if response_message %}
       <div class="status">{{ response_message }}</div>
     {% endif %}
+
     <div class="datagrid-title">Dynamic System Settings Comparison</div>
+
     {% if result_table %}
       <table>
         <thead>
@@ -212,10 +203,8 @@
               <td>
                 {% set value = row.env1_value %}
                 {% if value and value|length > 100 %}
-                  <div class="collapsible" id="env1-collapsible-{{ loop.index }}">
-                    {{ value[:100] }}...
-                  </div>
-                  <span class="expand-btn" onclick="toggleExpand('env1-collapsible-{{ loop.index }}', {{ value|tojson }}, this)">Show more</span>
+                  <div class="collapsible" id="env1-{{ loop.index }}">{{ value[:100] }}...</div>
+                  <span class="expand-btn" onclick="toggleExpand('env1-{{ loop.index }}', {{ value|tojson }}, this)">Show more</span>
                 {% else %}
                   {{ value }}
                 {% endif %}
@@ -223,10 +212,8 @@
               <td>
                 {% set value2 = row.env2_value %}
                 {% if value2 and value2|length > 100 %}
-                  <div class="collapsible" id="env2-collapsible-{{ loop.index }}">
-                    {{ value2[:100] }}...
-                  </div>
-                  <span class="expand-btn" onclick="toggleExpand('env2-collapsible-{{ loop.index }}', {{ value2|tojson }}, this)">Show more</span>
+                  <div class="collapsible" id="env2-{{ loop.index }}">{{ value2[:100] }}...</div>
+                  <span class="expand-btn" onclick="toggleExpand('env2-{{ loop.index }}', {{ value2|tojson }}, this)">Show more</span>
                 {% else %}
                   {{ value2 }}
                 {% endif %}
@@ -240,21 +227,23 @@
         </tbody>
       </table>
     {% else %}
-      <div style="color:#ffd700; margin-top:24px;">No comparison data yet.</div>
+      <div style="color:#ffd700; margin-top:20px;">No comparison data yet.</div>
     {% endif %}
   </div>
+
   <div class="footer">&copy; {{ year if year else '2025' }} ProcessInfo. All rights reserved.</div>
+
   <script>
     function toggleExpand(id, fullValue, btn) {
       const div = document.getElementById(id);
       if (btn.innerText === 'Show more') {
         div.innerText = fullValue;
-        btn.innerText = 'Show less';
         div.classList.add('expanded');
+        btn.innerText = 'Show less';
       } else {
         div.innerText = fullValue.substring(0, 100) + '...';
-        btn.innerText = 'Show more';
         div.classList.remove('expanded');
+        btn.innerText = 'Show more';
       }
     }
   </script>
