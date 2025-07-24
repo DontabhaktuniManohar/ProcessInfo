@@ -118,13 +118,14 @@
         td {
             min-width: 140px;
         }
+        td:nth-child(3) {
+            white-space: normal;         /* Allow wrapping */
+            word-break: break-word;      /* Break long words */
+            max-width: 350px;            /* Limit width so wrapping occurs */
+        }
         td:nth-child(4),
         td:nth-child(5) {
-            white-space: nowrap; /* Prevent wrapping for Date, Operator */
-        }
-        td:nth-child(3) {
-            white-space: normal; /* Allow wrapping for Value column */
-            word-break: break-word;
+            white-space: nowrap;         /* Prevent wrapping for Date, Operator */
         }
         tr:nth-child(even) {
             background: #20283a;
