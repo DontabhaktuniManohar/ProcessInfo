@@ -1,3 +1,36 @@
+sns = boto3.client('sns')
+SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN')  # Must be set in Lambda environment
+
+
+def send_sns_notification(recipient, count):
+    """Send SNS notification."""
+    message = (
+        f"⚠️ Alert: PausedCount for recipient '{recipient}' is {count}, "
+        f"exceeding threshold {THRESHOLD}.\n\n"
+        f"Alarm Name: {ALARM_PREFIX}{recipient}\n"
+        f"Namespace: {NAMESPACE}\n"
+        f"Metric: {METRIC_NAME}"
+    )
+    subject = f"PausedCount Alert for {recipient}"
+
+    try:
+        sns.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Message=message,
+            Subject=subject
+        )
+        logger.info(f"📨 SNS notification sent for {recipient}")
+    except Exception as sns_error:
+        logger.error(f"❌ Failed to send SNS notification for {recipient}", exc_info=True)
+
+
+
+
+
+
+
+
+
 import boto3
 import datetime
 import time
