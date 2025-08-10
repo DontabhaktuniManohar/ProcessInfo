@@ -54,12 +54,12 @@ def lambda_handler(event, context):
 
         query = """
         fields @timestamp, @message, @logStream, @log, data, toRecipient
-        filter @message like "sequencePauseNotification" and not isempty(data)
-        stats count(*) as rteCount by toRecipient, bin(5m)
-        sort rteCount desc
-        limit 10000
+        | filter @message like /sequencePauseNotification/ and not isempty(data)
+        | stats count(*) as rteCount by toRecipient, bin(5m)
+        | sort rteCount desc
+        | limit 10000
         """
-        log_group = "aws/lambda/prod-catalyst-websocket-handler-lambda"
+        log_group = "/aws/lambda/dcercrc"
         logger.info(f"Running query on log group: {log_group}")
 
         start_query = logs.start_query(
