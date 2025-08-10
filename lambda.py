@@ -8,19 +8,16 @@ import os
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# AWS clients
 logs = boto3.client('logs')
 cloudwatch = boto3.client('cloudwatch')
-sns = boto3.client('sns')
 
-# Configurable settings
+# Configurable threshold and alarm settings
 THRESHOLD = int(os.environ.get('ALARM_THRESHOLD', '100'))
 ALARM_PREFIX = os.environ.get('ALARM_PREFIX', 'PausedCountAlarm-')
 NAMESPACE = 'Custom/SequencePaused'
 METRIC_NAME = 'PausedCount'
 PERIOD = 300
 EVALUATION_PERIODS = 1
-SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN')  # Must be set in Lambda environment
 
 def alarm_exists(alarm_name):
     """Check if an alarm already exists."""
@@ -51,27 +48,6 @@ def create_alarm(recipient):
     )
     logger.info(f"✅ Created alarm for {recipient}")
 
-def send_sns_notification(recipient, count):
-    """Send SNS notification."""
-    message = (
-        f"⚠️ Alert: PausedCount for recipient '{recipient}' is {count}, "
-        f"exceeding threshold {THRESHOLD}.\n\n"
-        f"Alarm Name: {ALARM_PREFIX}{recipient}\n"
-        f"Namespace: {NAMESPACE}\n"
-        f"Metric: {METRIC_NAME}"
-    )
-    subject = f"PausedCount Alert for {recipient}"
-
-    try:
-        sns.publish(
-            TopicArn=SNS_TOPIC_ARN,
-            Message=message,
-            Subject=subject
-        )
-        logger.info(f"📨 SNS notification sent for {recipient}")
-    except Exception as sns_error:
-        logger.error(f"❌ Failed to send SNS notification for {recipient}", exc_info=True)
-
 def lambda_handler(event, context):
     try:
         logger.info("Lambda function started")
@@ -83,7 +59,7 @@ def lambda_handler(event, context):
         | sort rteCount desc
         | limit 10000
         """
-        log_group = "aws/lambda/prod-lambda"
+        log_group = "/aws/lambda/dcercrc"
         logger.info(f"Running query on log group: {log_group}")
 
         start_query = logs.start_query(
@@ -134,10 +110,9 @@ def lambda_handler(event, context):
             )
             logger.info(f"Pushed metric to CloudWatch for {recipient}")
 
-            # Create alarm and send notification
+            # Create alarm if needed
             if count > THRESHOLD:
                 create_alarm(recipient)
-                send_sns_notification(recipient, count)
 
         logger.info("Lambda execution completed successfully")
         return {
